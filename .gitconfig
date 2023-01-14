@@ -1,0 +1,7 @@
+[init]
+	defaultBranch = main
+[core]
+	editor = code --wait
+[user]
+	email = phillipsachris@gmail.com
+	name = chris-a-phillips
