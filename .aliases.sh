@@ -1,12 +1,11 @@
 #!/bin/bash
 
 # Easier navigation
-alias ..="cd .."
-alias ...="cd ../.."
-alias ....="cd ../../.."
-alias .....="cd ../../../.."
-alias ~="cd ~" # `cd` is probably faster to type though
-alias -- -="cd -"
+alias ..="cd .."                        # go up 1 level
+alias ...="cd ../.."                    # go up 1 level
+alias ....="cd ../../.."                # go up 1 level
+alias .....="cd ../../../.."            # go up 1 level
+alias ~="cd ~"                          # go up 1 level
 
 # Terminal shortcuts
 alias c="clear"
@@ -19,6 +18,7 @@ alias mv='mv -i'
 
 # Personal shortcuts
 alias als="cat .aliases"
+alias fns="ls ~/bin"
 
 # Git commands
 alias gst="git status"
