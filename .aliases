@@ -2,11 +2,12 @@
 
 
 # Easier navigation
+alias .-="cd -"                         # go back to previous directory
 alias ..="cd .."                        # go up 1 level
 alias ...="cd ../.."                    # go up 2 levels
 alias ....="cd ../../.."                # go up 3 levels
 alias .....="cd ../../../.."            # go up 4 levels
-alias ~="cd ~"                          # go to base dir
+alias ~="cd ~"                          # go to base directory
 
 # Terminal shortcuts
 alias c="clear"                         # clear terminal
@@ -27,15 +28,23 @@ alias gst='git rev-parse --git-dir > /dev/null 2>&1 && git status || exa'
 alias gc="git commit"
 alias gcm="git commit -m"
 alias gco="git checkout"
+alias gcb="git checkout -b"
+alias gundo="git reset HEAD~1 --mixed"
+alias gunstage="git restore --staged"
+alias gshove="!git push origin HEAD"
+alias greview="git diff master...HEAD"
+alias gnuke="git reset --hard"
+alias gcdelete="git branch -D"
 alias ga="git add"
-alias gb="git branch"
+alias gb="git branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"
 alias gf="git fetch"
-alias gbr="git branch -r"
+alias gbr="git branch -r --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"
 alias gd="git diff"
 alias grd="git fetch origin && git rebase origin/master"
 alias gpsh="git push -u 2>&1 | tee >(cat) | grep \"pull/new\" | awk '{print \$2}' | xargs open"
 alias gpll="git pull"
 alias git-current-branch="git branch | grep \* | cut -d ' ' -f2"
+
 
 alias lg=lg1
 alias lg1=lg1-specific --all
