@@ -1,6 +1,5 @@
 # !/bin/bash
 
-
 # Easier navigation
 alias .-="cd -"                         # go back to previous directory
 alias ..="cd .."                        # go up 1 level
@@ -25,21 +24,25 @@ alias path=e"cho "${PATH//:/$'\n'}""
 
 # Git commands
 alias gst='git rev-parse --git-dir > /dev/null 2>&1 && git status || exa'
-alias gc="git commit"
-alias gcm="git commit -m"
-alias gco="git checkout"
-alias gcb="git checkout -b"
-alias gundo="git reset HEAD~1 --mixed"
+alias gc="git commit" # commit without a comment
+alias gcm="git commit -m" # commit with a comment
+alias gco="git checkout" # checkout to branch
+alias gcb="git checkout -b" # find a way to combine this and one above --> if there is no branch with related name create new branch
+alias gdiff="git diff" # see file differences (from committed files)
+alias gsdiff="git diff --cached" # see file differences (from staged)  FIND A WAY TO COMBINE THIS AND ONE ABOVE
+alias gdifflong="git diff --color > gitdiff.txt && cat gitdiff.txt"
+alias gsdifflong="git diff --cached --color > gitdiff.txt && cat gitdiff.txt"
+alias gundo="git reset HEAD~1 --mixed" # undo 
+alias gamend="git commit --amend -m"
 alias gunstage="git restore --staged"
 alias gshove="!git push origin HEAD"
 alias greview="git diff master...HEAD"
 alias gnuke="git reset --hard"
-alias gcdelete="git branch -D"
+alias gdelete="git branch -D"
 alias ga="git add"
 alias gb="git branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"
 alias gf="git fetch"
 alias gbr="git branch -r --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"
-alias gd="git diff"
 alias grd="git fetch origin && git rebase origin/master"
 alias gpsh="git push -u 2>&1 | tee >(cat) | grep \"pull/new\" | awk '{print \$2}' | xargs open"
 alias gpll="git pull"
@@ -47,9 +50,9 @@ alias git-current-branch="git branch | grep \* | cut -d ' ' -f2"
 
 
 alias lg=lg1
-alias lg1=lg1-specific --all
-alias lg2=lg2-specific --all
-alias lg3=lg3-specific --all
+alias lg1=lg1-specific
+alias lg2=lg2-specific
+alias lg3=lg3-specific
     alias lg1-specific="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)'"
     alias lg2-specific="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(auto)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)'"
     alias lg3-specific="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)'"
