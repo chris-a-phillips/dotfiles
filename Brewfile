@@ -3,6 +3,9 @@ tap "homebrew/cask"
 tap "homebrew/core"
 tap "homebrew/services"
 tap "mongodb/brew"
+tap "wvanlint/twf"
+# Clone of cat(1) with syntax highlighting and Git integration
+brew "bat"
 # Modern replacement for 'ls'
 brew "exa"
 # Banner-like program prints strings as ASCII art
