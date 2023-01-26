@@ -1,6 +1,6 @@
 # !/bin/bash
 
-# Easier navigation
+# Easier Navigation
 alias .-="cd -"
 alias ..="cd .."
 alias ...="cd ../.."
@@ -8,31 +8,31 @@ alias ....="cd ../../.."
 alias .....="cd ../../../.."
 alias ~="cd ~"
 
-# Terminal shortcuts
+# Terminal Shortcuts
 alias c="clear"
 alias sc="source"
 alias rst="reset"
 
-# Normal commands with extra utility
-alias rm='rm -i'                        # delete file with confirmation prompt
-alias cp='cp -i'                        # copy file with confirmation prompt
-alias mv='mv -i'                        # move file with confirmation prompt
+# Normal Commands With Extra Utility
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
 
-# Personal helpful commands
+# Personal Helpful Commands
 alias cmds="bat ~/.dotfiles/.aliases.md"
 alias fns="ls ~/bin"
 alias ppath="echo "${PATH//:/$'\n'}""
 
-# Git commands
+# Git Commands
 alias gst='git rev-parse --git-dir > /dev/null 2>&1 && git status || exa'
-alias gc="git commit" # commit without a comment
-alias gcm="git commit -m" # commit with a comment
-alias gco="git checkout" # checkout to branch
-alias gcb="git checkout -b" # find a way to combine this and one above --> if there is no branch with related name create new branch
-alias gdiff="git diff" # see file differences (from committed files)
-alias gsdiff="git diff --cached" # see file differences (from staged)  FIND A WAY TO COMBINE THIS AND ONE ABOVE
-alias gshow="git show" # show differences between last two commits
-alias gundo="git reset HEAD~1 --mixed" # undo 
+alias gc="git commit"
+alias gcm="git commit -m"
+alias gco="git checkout"
+alias gcb="git checkout -b"
+alias gdiff="git diff"
+alias gsdiff="git diff --cached"
+alias gshow="git show"
+alias gundo="git reset HEAD~1 --mixed"
 alias gamend="git commit --amend -m"
 alias gunstage="git restore --staged"
 alias gshove="!git push origin HEAD"
