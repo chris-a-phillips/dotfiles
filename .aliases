@@ -1,16 +1,17 @@
 # !/bin/bash
 
 # Easier navigation
-alias .-="cd -"                         # go back to previous directory
-alias ..="cd .."                        # go up 1 level
-alias ...="cd ../.."                    # go up 2 levels
-alias ....="cd ../../.."                # go up 3 levels
-alias .....="cd ../../../.."            # go up 4 levels
-alias ~="cd ~"                          # go to base directory
+alias .-="cd -"
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+alias .....="cd ../../../.."
+alias ~="cd ~"
 
 # Terminal shortcuts
-alias c="clear"                         # clear terminal
-alias sc="source"                       # source file
+alias c="clear"
+alias sc="source"
+alias rst="reset"
 
 # Normal commands with extra utility
 alias rm='rm -i'                        # delete file with confirmation prompt
@@ -18,9 +19,9 @@ alias cp='cp -i'                        # copy file with confirmation prompt
 alias mv='mv -i'                        # move file with confirmation prompt
 
 # Personal helpful commands
-alias als="cat ~/.aliases"
+alias cmds="bat ~/.dotfiles/.aliases.md"
 alias fns="ls ~/bin"
-alias path=e"cho "${PATH//:/$'\n'}""
+alias ppath="echo "${PATH//:/$'\n'}""
 
 # Git commands
 alias gst='git rev-parse --git-dir > /dev/null 2>&1 && git status || exa'
@@ -40,12 +41,12 @@ alias gnuke="git reset --hard"
 alias gdelete="git branch -D"
 alias ga="git add"
 alias gb="git branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"
-alias gf="git fetch"
 alias gbr="git branch -r --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"
+alias gf="git fetch"
 alias grd="git fetch origin && git rebase origin/master"
 alias gpsh="git push -u 2>&1 | tee >(cat) | grep \"pull/new\" | awk '{print \$2}' | xargs open"
 alias gpll="git pull"
-alias git-current-branch="git branch | grep \* | cut -d ' ' -f2"
+alias gbranch="git branch | grep \* | cut -d ' ' -f2"
 
 
 alias lg=lg1
