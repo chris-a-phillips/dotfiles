@@ -1,0 +1,47 @@
+#!/bin/bash
+#
+# Switch git branches through mini cli
+. _utils
+
+
+#######################################
+# Switch git branches through mini cli
+# Arguments:
+#   None
+# Outputs:
+#   None
+#######################################
+
+main() {
+    echo "${BBLUE}Current local branches"
+    echo "$(git branch --format='%1B[1;33m%(refname:short)%1B[m  - %(contents:subject) %1B[0;32m(%(committerdate:relative)) %(authorname)%1B[m' --sort=-committerdate)"
+    echo "${BBLUE}============================================================================${NC}"
+
+
+    PS3="Select branch to switch to: "
+
+
+    eval "$(git for-each-ref --shell --format='branches+=(%(refname:short))' refs/heads/)"
+    echo "Git checkout options:"
+    select branch in ${branches[@]}
+        do
+            # stop script if user types 'q'
+            if [[ "$REPLY" == 'q' ]]; then break; fi
+
+            # retry if option was not valid
+            if [[ "$branch" == "" ]]
+            then
+                echo "${RED}invalid option${YELLOW} $REPLY${NC}"
+                continue
+            fi
+
+            # now we can use the selected branch
+            echo "${GREEN}Switching to branch${YELLOW} $branch${NC}"
+            git checkout $branch
+
+            # break out of loop
+            break
+        done
+}
+
+main

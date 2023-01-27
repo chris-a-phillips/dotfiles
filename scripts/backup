@@ -1,4 +1,16 @@
 #!/bin/bash
+#
+# Create backup tar file of this directory
+. _utils
+
+
+#######################################
+# Create backup tar file of this directory
+# Arguments:
+#   None
+# Outputs:
+#   backup_file
+#######################################
 
 BACKUPFILE=backup-$(date +%m-%d-%Y)
 archive=${1:-$BACKUPFILE}
