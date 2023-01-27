@@ -43,3 +43,10 @@ brew bundle --file ~/.dotfiles/Brewfile
 # ...or move to the directory first.
 cd ~/.dotfiles && brew bundle
 ```
+
+
+5. Copy scripts to bin folder
+  - copy directory from .dotfiles to ~/bin
+  - chmod +x all scripts
+  - add path to PATH
+
