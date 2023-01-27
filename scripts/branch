@@ -5,32 +5,39 @@
 
 # get current branch name and parse with cut
 # you may need to adjust cut command for your shell
+
+BBLUE='\033[0;34m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
 current="$(git branch | grep "*" | cut -b 3-)"
 
 # if arg is not set
 if [ -z "${1}" ]; then
-    echo "Name of new branch?"
+    echo -e "Name of new branch?"
     read branch
     # and if on master
     if [ "$current" == 'master' ];then
-    echo "Creating $branch from Master..."
-    git checkout master && git pull origin master && git checkout -b "$branch"
+        echo -e "Creating ${YELLOW} $branch ${NC} from ${RED}Master${NC}..."
+        git checkout master && git pull origin master && git checkout -b "$branch"
     else
-    #if not on master
-    echo "Create $branch from $current (c) or from Master (m)?"
-    read -p "current(c) / Master(m) ?" cm
-    [ $cm == 'c' ] && git checkout -b "$branch"
-    [ $cm == 'm' ] && git checkout master && git pull origin master && git checkout -b "$branch"
+        #if not on master
+        echo -e "Create ${BBLUE} $branch ${NC} from ${YELLOW} $current (c) ${NC} or from ${RED}Master (m)${NC}?"
+        read -p "current(c) / Master(m) ?" cm
+        [ $cm == 'c' ] && git checkout -b "$branch"
+        [ $cm == 'm' ] && git checkout master && git pull origin master && git checkout -b "$branch"
     fi
 #otherwise use $1 arg as branch name
 else
     if [ "$current" == 'master' ];then
-    echo "Creating $1 from Master..."
-    git checkout master && git pull origin master && git checkout -b "$1"
+        echo -e "Creating ${BBLUE} $1 ${NC} from ${RED}Master${NC}?"
+        git checkout master && git pull origin master && git checkout -b "$1"
     else
-    echo "Create $1 from $current (c) or from Master (m)?"
-    read -p "current(c) / Master(m) ?" cm
-    [ $cm == 'c' ] && git checkout -b "$1"
-    [ $cm == 'm' ] && git checkout master && git pull origin master && git checkout -b "$1"
+        echo -e "Create ${BBLUE} $1 ${NC} from ${YELLOW} $current (c) ${NC} or from ${RED}Master (m)${NC}?"
+        read -p "current(c) / Master(m) ?" cm
+        [ $cm == 'c' ] && git checkout -b "$1"
+        [ $cm == 'm' ] && git checkout master && git pull origin master && git checkout -b "$1"
     fi
 fi
