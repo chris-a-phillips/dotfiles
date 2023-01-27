@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# Template to copy and paste to create new bash scripts
+. _utils
+
+
+#######################################
+# Template to copy and paste to create new bash scripts
+# Arguments:
+#   None
+# Outputs:
+#   Writes help information to terminal
+#######################################
+function() {
+}
+
+function_with_argument() {
+    echo "$1"
+}
+
+
+main(){
+    if [[ "$1" == "" ]]; then
+        function
+    else
+        function_with_argument $1
+    fi
+}
+
+main $1

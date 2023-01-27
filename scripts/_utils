@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+# All colors, error handling, etc imported by other scripts
+
+
+
+#######################################
+# All colors, error handling, etc imported by other scripts
+# Arguments:
+#   None
+# Outputs:
+#   None
+#######################################
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+
+# debug () { ${debug-:} "$0: $@" >&2; }
+# info () {  ${info-:}  "$0: $@" >&2; }
+# warn () {  ${warn-:}  "$0: $@" >&2; }
+# error () { ${error-:} "$0: $@" >&2; }
+
+
+
+# handle() {
+#     case $1 in
+#     --debug) debug=echo; info=echo;  warn=echo;  error=1;;
+#     --info)  info=echo;  warn=echo;  error=1;;
+#     --warn)  warn=echo;  error=echo;;
+#     --error) error=echo;;
+#     *) echo "$0: unknown option '$1' -- aborting" >&2
+#         exit 127;;
+#     esac
+# }
+
+# debug () { ${debug-:} "$0: $@" >&2; }
+# info () {  ${info-:}  "$0: $@" >&2; }
+# warn () {  ${warn-:}  "$0: $@" >&2; }
+# error () { ${error-:} "$0: $@" >&2; }
+
+# case $1 in
+#   --debug) debug=echo; info=echo;  warn=echo;  error=1;;
+#   --info)  info=echo;  warn=echo;  error=1;;
+#   --warn)  warn=echo;  error=echo;;
+#   --error) error=echo;;
+#   -*) echo "$0: unknown option '$1' -- aborting" >&2
+#       exit 127;;
+# esac
+# shift
+
+# debug here we go
+# info starting
+# echo "Hello world"
+# warn the end is nigh
+# echo "Hi there"
+# error we die here

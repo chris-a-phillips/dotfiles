@@ -1,16 +1,16 @@
-#! /bin/bash
-# quick script for making branch creation a bit easier
-# usage: $ ./branch.sh branchname
-#        $ ./branch.sh
+#!/bin/bash
+#
+# Create new git branch
+. _utils
 
-# get current branch name and parse with cut
-# you may need to adjust cut command for your shell
 
-BBLUE='\033[0;34m'
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+#######################################
+# Create new git branch
+# Arguments:
+#   None
+# Outputs:
+#   None
+#######################################
 
 current="$(git branch | grep "*" | cut -b 3-)"
 

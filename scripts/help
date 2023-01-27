@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# Help script to show docstrings
+. _utils
+
+
+#######################################
+# Help script to show docstrings
+# Arguments:
+#   file_name?: string
+# Outputs:
+#   Writes help information to terminal
+#######################################
+display_help() {
+    help=./help
+    echo `basename "$help"`': '
+    head -n 3 "$help" | tail -n 1
+    echo ""
+
+    for f in ./*; do
+        if [[ "$f" == "./help"
+            || "$f" == "./_bash_template"
+            || "$f" == "./_utils" ]]; then
+            continue
+        else
+            echo `basename "$f"`': '
+            head -n 3 "$f" | tail -n 1
+            echo ""
+        fi
+    done
+}
+
+display_help_full() {
+    echo "$1"
+    head -n 13 "$1" | tail -n 9
+    echo ""
+}
+
+
+main(){
+    if [[ "$1" == "" ]]; then
+        display_help
+    else
+        display_help_full $1
+    fi
+}
+
+main $1

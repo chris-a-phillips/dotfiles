@@ -1,6 +1,20 @@
 #!/bin/bash
+#
+# Make folder and cd into it in one command
+. _utils
+
+
+#######################################
+# Make folder and cd into it in one command
+# Arguments:
+#   folder_name: string
+# Outputs:
+#   None
+#######################################
 
 mkcd() {
-    mkdir -p "${1}"
-    cd "${1}"
+    mkdir -p "$1"
+    cd "$1"
 }
+
+mkcd $1
