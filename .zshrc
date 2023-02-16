@@ -4,8 +4,9 @@ export PATH=$PATH:/usr/local/bin
 export PATH=/opt/homebrew/bin:$PATH
 
 
-if [ -f ~/.aliases ]; then
-    source ~/.aliases
+# bash aliases
+if [ -f ~/.dotfiles/.aliases ]; then
+    . ~/.dotfiles/.aliases
 fi
 
 
