@@ -12,6 +12,7 @@ alias ~="cd ~"
 alias c="clear"
 alias sc="source"
 alias rst="reset"
+alias nv="nvim"
 
 # Normal Commands With Extra Utility
 alias rm='rm -i'
