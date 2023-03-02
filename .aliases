@@ -12,14 +12,16 @@ alias ~="cd ~"
 alias c="clear"
 alias sc="source"
 alias rst="reset"
-alias nv="nvim"
 
 # Normal Commands With Extra Utility
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
+alias rm="rm -i"
+alias cp="cp -i"
+alias mv="mv -i"
+alias fzf="fzf --preview 'bat --style=numbers --color=always --line-range :500 {}'"
 
 # Personal Helpful Commands
+alias fcd="cd $(find * -type d | fzf)"
+alias ffcd="cd ~ && cd \$(find * -type d | fzf)"
 alias cmds="bat ~/.dotfiles/.aliases.md"
 alias fns="ls ~/bin"
 alias ppath="echo "${PATH//:/$'\n'}""
