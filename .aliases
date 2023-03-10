@@ -20,17 +20,21 @@ alias mv="mv -i"
 alias fzf="fzf --preview 'bat --style=numbers --color=always --line-range :500 {}'"
 
 # Personal Helpful Commands
-alias fcd="cd $(find * -type d | fzf)"
-alias ffcd="cd ~ && cd \$(find * -type d | fzf)"
-alias cmds="bat ~/.dotfiles/.aliases.md"
+alias als="bat ~/.dotfiles/.aliases"
 alias fns="ls ~/bin"
 alias ppath="echo "${PATH//:/$'\n'}""
+
+# Aliases for utilities downloaded from homebrew
+alias tfw='twf --previewCmd="bat --color=always --style=grid,numbers {}" -preview=true'
+alias fcd="cd \$(find * -type d | fzf)"
+alias ffcd="cd ~ && cd \$(find * -type d | fzf)"
 
 # Git Commands
 alias gst='git rev-parse --git-dir > /dev/null 2>&1 && git status || exa'
 alias gc="git commit"
 alias gcm="git commit -m"
 alias gco="git checkout"
+alias gcorb="git fetch origin && git checkout --track origin/"
 alias gcb="git checkout -b"
 alias gdiff="git diff"
 alias gsdiff="git diff --cached"
