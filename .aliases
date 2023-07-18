@@ -1,5 +1,8 @@
 # !/bin/bash
 
+# Built Aliases
+alias credstash="AWS_SHARED_CREDENTIALS_FILE=$HOME/.aws/prod-integrations credstash"
+
 # Easier Navigation
 alias .-="cd -"
 alias ..="cd .."
@@ -17,7 +20,7 @@ alias rst="reset"
 alias rm="rm -i"
 alias cp="cp -i"
 alias mv="mv -i"
-alias fzf="fzf --preview 'bat --style=numbers --color=always --line-range :500 {}'"
+alias fzfp="fzf --preview 'bat --style=numbers --color=always --line-range :500 {}'"
 
 # Personal Helpful Commands
 alias als="bat ~/.dotfiles/.aliases"
@@ -25,9 +28,13 @@ alias fns="ls ~/bin"
 alias ppath="echo "${PATH//:/$'\n'}""
 
 # Aliases for utilities downloaded from homebrew
-alias tfw='twf --previewCmd="bat --color=always --style=grid,numbers {}" -preview=true'
-alias fcd="cd \$(find * -type d | fzf)"
-alias ffcd="cd ~ && cd \$(find * -type d | fzf)"
+alias sfzfo='vi $(rg . | fzf | cut -d ":" -f 1)' # Fuzzy search every line, in every file, and open that file
+alias sfzff='rg . | fzf | cut -d ":" -f 1' # Fuzzy search every line, in every file, and return the file location
+alias vfzf='vi $(fzf)' # Fuzzy find exact file name and vi
+alias ffzf="vi $(find . '/' | fzf)" # Fuzzy find exact search file name from root and vi
+alias tfw='twf --previewCmd="bat --color=always --style=grid,numbers {}" -preview=true' # Bat files with colored lines
+alias fcd="cd \$(find * -type d | fzf)" # Fuzzy find directory and cd into it
+alias ffcd="cd ~ && cd \$(find * -type d | fzf)" # Fuzzy find directory from root and cd into it
 
 # Git Commands
 alias gst='git rev-parse --git-dir > /dev/null 2>&1 && git status || exa'
@@ -43,6 +50,7 @@ alias gundo="git reset HEAD~1 --mixed"
 alias gamend="git commit --amend -m"
 alias gunstage="git restore --staged"
 alias gshove="!git push origin HEAD"
+alias gsreview="git diff --cached master..HEAD"
 alias greview="git diff master...HEAD"
 alias gnuke="git reset --hard"
 alias gdelete="git branch -D"
