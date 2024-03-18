@@ -83,7 +83,7 @@ main(){
                     ;;
                 5)
                     option_picked "Find directory and cd into it"
-                    dir=$(find * -type d | fzf)
+                    dir=$(find * -type d | fzf --exact)
                     if [ -d "$dir" ]; then
                         cd "$dir"
                     else
