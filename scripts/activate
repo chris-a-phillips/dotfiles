@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# Script to activate Python virtual environment
+# Usage: ./activate_venv.sh
+
+# Load utility functions
+. _utils
+
+#######################################
+# Activates the virtual environment for the current project.
+# If no virtual environment is found, creates a new one.
+# Arguments:
+#   None
+# Outputs:
+#   Activates virtual environment or creates a new one.
+#######################################
+activate_venv() {
+    if [ -f "venv/bin/activate" ]; then
+        source venv/bin/activate
+        echo "Activated existing virtual environment."
+    else
+        echo "No virtual environment found. Creating a new one..."
+        python -m venv venv && source venv/bin/activate
+    fi
+}
+
+# Call the main function
+main(){
+    activate_venv
+}
+
+# Execute main with arguments passed to script
+main "$@"
