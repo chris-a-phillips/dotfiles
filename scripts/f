@@ -36,6 +36,8 @@ show_menu(){
     printf "${menu}**${number} 5)${menu} Find directory and cd into it${normal}\n"
     printf "${menu}**${number} 6)${menu} Search and replace text in files${normal}\n"
     printf "${menu}**${number} 7)${menu} Show recent files and directories${normal}\n"
+    printf "${menu}**${number} 8)${menu} Search hidden files and directories and cd into it${normal}\n"
+    printf "${menu}**${number} 9)${menu} Search hidden files and directories and return the location${normal}\n"
     printf "${menu}*********************************************${normal}\n"
     printf "Please enter a menu option and enter or ${fgred}x to exit. ${normal}"
 }
@@ -48,7 +50,7 @@ main(){
         elif [ "$opt" == "" ]; then
             option_picked "Pick an option from the menu"
             show_menu
-        elif [ "$opt" -ge 1 -a "$opt" -le 7 ]; then
+        elif [ "$opt" -ge 1 -a "$opt" -le 9 ]; then
             case $opt in
                 1)
                     option_picked "Search every line, in every file, and open that file"
@@ -100,12 +102,30 @@ main(){
                     option_picked "Show recent files and directories"
                     ls -lt | awk '{print $9}' | fzf
                     ;;
+                8)
+                    option_picked "Search hidden files and directories and cd into it"
+                    dir=$(find . -type d -name '.*' | fzf --exact)
+                    if [ -d "$dir" ]; then
+                        cd "$dir"
+                    else
+                        option_picked "Directory not found."
+                    fi
+                    ;;
+                9)
+                    option_picked "Search hidden files and directories and return the location"
+                    file=$(find . -type d -name '.*' | fzf --exact)
+                    if [ -d "$file" ]; then
+                        echo "$file"
+                    else
+                        option_picked "Directory not found."
+                    fi
+                    ;;
                 *)
-                    option_picked "Invalid option. Please choose a number from 1 to 7 or 'x' to exit."
+                    option_picked "Invalid option. Please choose a number from 1 to 9 or 'x' to exit."
                     ;;
             esac
         else
-            option_picked "Invalid option. Please choose a number from 1 to 7 or 'x' to exit."
+            option_picked "Invalid option. Please choose a number from 1 to 9 or 'x' to exit."
         fi
     done
 }
