@@ -1,13 +1,13 @@
 [init]
-	defaultBranch = main
+    defaultBranch = main
 
 [core]
-	editor = code --wait
+    editor = code --wait
     pager = delta
 
 [user]
-	email = phillipsachris@gmail.com
-	name = chris-a-phillips
+    email = phillipsachris@gmail.com
+    name = Chris Phillips
 
 [interactive]
     diffFilter = delta --color-only
@@ -35,3 +35,11 @@
 
 [diff]
     colorMoved = default
+
+[filter "lfs"]
+        required = true
+        clean = git-lfs clean -- %f
+        smudge = git-lfs smudge -- %f
+        process = git-lfs filter-process
+[safe]
+	directory = /workspaces/integration-pipelines
