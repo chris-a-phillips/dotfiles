@@ -4,6 +4,10 @@ tap "mongodb/brew"
 tap "wvanlint/twf"
 # Clone of cat(1) with syntax highlighting and Git integration
 brew "bat"
+# Interpreted, interactive, object-oriented programming language
+brew "python@3.12"
+# Core application library for C
+brew "glib"
 # Vector graphics library with cross-device output support
 brew "cairo"
 # Modern replacement for 'ls'
@@ -18,8 +22,12 @@ brew "gdk-pixbuf"
 brew "git"
 # Syntax-highlighting pager for git and diff output
 brew "git-delta"
+# OpenType text shaping engine
+brew "harfbuzz"
 # Network authentication protocol
 brew "krb5"
+# Simple terminal UI for git commands
+brew "lazygit"
 # Asynchronous event library
 brew "libevent"
 # Portable Foreign Function Interface library
@@ -60,14 +68,26 @@ brew "python@3.11"
 brew "python@3.9"
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
-# Cross-shell prompt for astronauts
-brew "starship"
+# Command-line deletion tool focused on safety, ergonomics, and performance
+brew "rm-improved"
+# Simplified and community-driven man pages
+brew "tldr"
 # Terminal multiplexer
 brew "tmux"
+# Manage complex tmux sessions easily
+brew "tmuxinator"
 # Display directories as trees (with optional color/HTML output)
 brew "tree"
+# Tool for creating isolated virtual python environments
+brew "virtualenv"
 # High-performance, schema-free, document-oriented database
 brew "mongodb/brew/mongodb-community"
+# Enable Windows-like alt-tab
+cask "alt-tab"
+# Utility to hide menu bar items
+cask "hiddenbar"
+# Menu bar calendar
+cask "itsycal"
 vscode "aaron-bond.better-comments"
 vscode "adpyke.codesnap"
 vscode "alefragnani.bookmarks"
