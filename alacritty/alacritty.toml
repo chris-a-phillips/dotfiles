@@ -3,6 +3,15 @@ live_config_reload = true
 [font.normal]
 family = "MesloLGS NF"
 
+[font]
+size = 12.75
+
+[keyboard]
+bindings = [
+  { key = "W", mods = "Alt", chars = "\u001BF" },
+  { key = "B",  mods = "Alt", chars = "\u001BB" },
+]
+
 # TokyoNight Alacritty Colors
 # Default colors
 [colors.primary]
