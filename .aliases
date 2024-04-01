@@ -7,6 +7,7 @@ alias ...="cd ../.."                              # Go up two directories
 alias ....="cd ../../.."                          # Go up three directories
 alias .....="cd ../../../.."                     # Go up four directories
 alias ~="cd ~"                                    # Go to the home directory
+alias :q="exit"
 
 # Terminal Shortcuts
 alias c="clear"                                   # Clear the terminal screen
