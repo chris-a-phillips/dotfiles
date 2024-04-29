@@ -1,70 +1,80 @@
 # !/bin/bash
 
 # Easier Navigation
-alias .-="cd -"
-alias ..="cd .."
-alias ...="cd ../.."
-alias ....="cd ../../.."
-alias .....="cd ../../../.."
-alias ~="cd ~"
+alias .-="cd -"                                   # Change directory to the previous directory
+alias ..="cd .."                                  # Go up one directory
+alias ...="cd ../.."                              # Go up two directories
+alias ....="cd ../../.."                          # Go up three directories
+alias .....="cd ../../../.."                     # Go up four directories
+alias ~="cd ~"                                    # Go to the home directory
+alias :q="exit"
 
 # Terminal Shortcuts
-alias c="clear"
-alias sc="source"
-alias rst="reset"
+alias c="clear"                                   # Clear the terminal screen
+alias sc="source"                                 # Source a script or file
+alias rst="reset"                                 # Reset the terminal to default settings
 
 # Normal Commands With Extra Utility
-alias rm="rm -i"
-alias cp="cp -i"
-alias mv="mv -i"
-alias fzf="fzf --preview 'bat --style=numbers --color=always --line-range :500 {}'"
+alias rm="rm -i"                                  # Interactive file deletion
+alias cp="cp -i"                                  # Interactive file copying
+alias mv="mv -i"                                  # Interactive file moving
+alias fzf="fzf --preview 'bat --style=numbers --color=always --line-range :500 {}'"  # Fuzzy finder with preview using bat
 
 # Personal Helpful Commands
-alias als="bat ~/.dotfiles/.aliases"
-alias fns="ls ~/bin"
-alias ppath="echo "${PATH//:/$'\n'}""
+alias als="bat ~/.dotfiles/.aliases"              # View personal aliases file
+alias fns="ls ~/bin"                              # List files in the ~/bin directory
+alias ppath="echo "${PATH//:/$'\n'}""              # Print each PATH directory on a new line
 
-# Aliases for utilities downloaded from homebrew
-alias tfw='twf --previewCmd="bat --color=always --style=grid,numbers {}" -preview=true'
-alias fcd="cd \$(find * -type d | fzf)"
-alias ffcd="cd ~ && cd \$(find * -type d | fzf)"
+# Aliases for utilities downloaded from Homebrew
+alias twf='twf --previewCmd="bat --color=always --style=grid,numbers {}" -preview=true'  # Fuzzy file finder with preview using bat
+alias fcd="cd \$(find * -type d | fzf)"            # Fuzzy directory changer
+alias ffcd="cd ~ && cd \$(find * -type d | fzf)"   # Fuzzy directory changer from home directory
 
 # Git Commands
-alias gst='git rev-parse --git-dir > /dev/null 2>&1 && git status || exa'
-alias gc="git commit"
-alias gcm="git commit -m"
-alias gco="git checkout"
-alias gcorb="git fetch origin && git checkout --track origin/"
-alias gcb="git checkout -b"
-alias gdiff="git diff"
-alias gsdiff="git diff --cached"
-alias gshow="git show"
-alias gundo="git reset HEAD~1 --mixed"
-alias gamend="git commit --amend -m"
-alias gunstage="git restore --staged"
-alias gshove="!git push origin HEAD"
-alias greview="git diff master...HEAD"
-alias gnuke="git reset --hard"
-alias gdelete="git branch -D"
-alias ga="git add"
-alias gb="git branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"
-alias gbr="git branch -r --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"
-alias gf="git fetch"
-alias grd="git fetch origin && git rebase origin/master"
-alias gpsh="git push -u 2>&1 | tee >(cat) | grep \"pull/new\" | awk '{print \$2}' | xargs open"
-alias gpll="git pull"
-alias gbranch="git branch | grep \* | cut -d ' ' -f2"
+alias gst='git rev-parse --git-dir > /dev/null 2>&1 && git status || exa'  # Git status or directory listing if not in a git repo
+alias gc="git commit"                               # Git commit
+alias gcm="git commit -m"                           # Git commit with message
+alias gco="git checkout"                            # Git checkout
+alias gcorb="git fetch origin && git checkout --track origin/"  # Git checkout remote branch
+alias gcb="git checkout -b"                         # Git checkout new branch
+alias gdiff="git diff"                              # Git diff
+alias gsdiff="git diff --cached"                    # Git diff staged
+alias gsclear="git stash clear"                     # Git stash clear
+alias gshow="git show"                              # Git show
+alias gundo="git reset HEAD~1 --mixed"              # Git undo last commit
+alias gamend="git commit --amend -m"                # Git amend last commit
+alias gunstage="git restore --staged"               # Git unstage changes
+alias gshove="!git push origin HEAD"                # Git push current branch
+alias greview=' 				    # Git review changes in branch from main/master
+if git rev-parse --verify --quiet main >/dev/null; then
+    git diff main...HEAD
+elif git rev-parse --verify --quiet master >/dev/null; then
+    git diff master...HEAD
+else
+    echo "Error: Main or master branch not found"
+fi
+'
+alias gnuke="git reset --hard"                      # Git reset hard
+alias gdelete="git branch -D"                        # Git delete branch
+alias ga="git add"                                   # Git add
+alias gb="git branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"  # Git branch with formatting
+alias gbr="git branch -r --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"  # Git remote branch with formatting
+alias gf="git fetch"                                 # Git fetch
+alias grd="git fetch origin && git rebase origin/master"  # Git rebase onto origin/master
+alias gpsh="git push -u 2>&1 | tee >(cat) | grep \"pull/new\" | awk '{print \$2}' | xargs open"  # Git push and open pull request
+alias gpll="git pull"                               # Git pull
+alias gcbranch="git branch | grep \* | cut -d ' ' -f2"  # Git current branch name
 
-
+# Git Log Aliases
 alias lg=lg1
 alias lg1=lg1-specific
 alias lg2=lg2-specific
 alias lg3=lg3-specific
-    alias lg1-specific="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)'"
-    alias lg2-specific="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(auto)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)'"
-    alias lg3-specific="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)'"
+    alias lg1-specific="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)'"  # Git log with specific format 1
+    alias lg2-specific="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(auto)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)'"  # Git log with specific format 2
+    alias lg3-specific="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)'"  # Git log with specific format 3
 
+# Python
+alias python='python3'                              # Use Python 3 as default interpreter
+alias pip='pip3'                                    # Use pip3 as default package manager
 
-# PYTHON
-alias python='python3'
-alias pip='pip3'
