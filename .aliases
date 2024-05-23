@@ -5,9 +5,10 @@ alias .-="cd -"                                   # Change directory to the prev
 alias ..="cd .."                                  # Go up one directory
 alias ...="cd ../.."                              # Go up two directories
 alias ....="cd ../../.."                          # Go up three directories
-alias .....="cd ../../../.."                     # Go up four directories
+alias .....="cd ../../../.."                      # Go up four directories
 alias ~="cd ~"                                    # Go to the home directory
 alias :q="exit"
+alias lsa="ls -a"                                 # Print hidden files
 
 # Terminal Shortcuts
 alias c="clear"                                   # Clear the terminal screen
@@ -23,7 +24,7 @@ alias fzf="fzf --preview 'bat --style=numbers --color=always --line-range :500 {
 # Personal Helpful Commands
 alias als="bat ~/.dotfiles/.aliases"              # View personal aliases file
 alias fns="ls ~/bin"                              # List files in the ~/bin directory
-alias ppath="echo "${PATH//:/$'\n'}""              # Print each PATH directory on a new line
+alias ppath="echo "${PATH//:/$'\n'}""             # Print each PATH directory on a new line
 
 # Aliases for utilities downloaded from Homebrew
 alias twf='twf --previewCmd="bat --color=always --style=grid,numbers {}" -preview=true'  # Fuzzy file finder with preview using bat
