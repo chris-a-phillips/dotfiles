@@ -11,8 +11,9 @@ size = 12.75
 
 [keyboard]
 bindings = [
-  { key = "W", mods = "Alt", chars = "\u001BF" },
-  { key = "B",  mods = "Alt", chars = "\u001BB" },
+  { key: W, mods: Alt, chars: "\x1bw" },
+  { key: B, mods: Alt, chars: "\x1bb" }
+
 ]
 
 # TokyoNight Alacritty Colors
