@@ -36,6 +36,11 @@ if [ -f ~/.dotfiles/.aliases ]; then
     . ~/.dotfiles/.aliases
 fi
 
+# Fix to ctrl+r in tmux
+bindkey '^R' history-incremental-search-backward
+# Added ctrl+p for good measure, since that was also broken
+bindkey '^P' up-history
+
 # alias python=python3
 # alias pip=pip3
 
@@ -74,3 +79,8 @@ fpath+=${ZDOTDIR:-~}/.zsh_functions
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 export EDITOR=nvim
+
+
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
