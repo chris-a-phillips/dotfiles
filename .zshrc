@@ -58,11 +58,11 @@ mkcd() {
 # Theme and Prompt Customization
 # -------------------------------
 # Set theme to Powerlevel10k and load theme
-source ~/powerlevel10k/powerlevel10k.zsh-theme
-ZSH_THEME="powerlevel10k/powerlevel10k"
+# source ~/powerlevel10k/powerlevel10k.zsh-theme
+# ZSH_THEME="powerlevel10k/powerlevel10k"
 
 # Load Powerlevel10k configuration
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # -------------------------------
 # Plugin Initializations
@@ -79,7 +79,7 @@ eval "$(pyenv init -)"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # ASDF version manager
-. /opt/homebrew/opt/asdf/libexec/asdf.sh
+# . /opt/homebrew/opt/asdf/libexec/asdf.sh
 
 # Conda initialization
 # !! Contents within this block are managed by 'conda init' !!
@@ -96,7 +96,7 @@ fi
 unset __conda_setup
 
 # Direnv initialization for environment-specific configurations
-eval "$(direnv hook zsh)"
+# eval "$(direnv hook zsh)"
 
 # Custom function path
 fpath+=${ZDOTDIR:-~}/.zsh_functions
