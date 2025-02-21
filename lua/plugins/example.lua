@@ -250,4 +250,16 @@ return {
       { "<c-\\>", "<cmd><C-U>TmuxNavigatePrevious<cr>" },
     },
   },
+  -- Snacks exploerer options
+  {
+    {
+      "folke/snacks.nvim",
+      opts = {
+        picker = {
+          hidden = true, -- for hidden files
+          ignored = true, -- for .gitignore files
+        },
+      },
+    },
+  },
 }
