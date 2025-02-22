@@ -16,17 +16,31 @@ screenkey.setup({})
 
 -- Auto-start screenkey when Neovim enters the UI
 vim.api.nvim_create_autocmd("VimEnter", {
-  callback = function()
-    screenkey.toggle() -- Automatically turns it on
-  end,
+	callback = function()
+		screenkey.toggle() -- Automatically turns it on
+	end,
 })
 
 -- Enable numbers and relative numbers in snacks explorer
 vim.defer_fn(function()
-  vim.cmd("set number")
-  vim.cmd("set relativenumber")
+	vim.cmd("set number")
+	vim.cmd("set relativenumber")
+	vim.cmd("wincmd l")
 end, 100) -- Small delay to ensure LazyVim finishes loading
 
+-- Automaticaly invoke rainbow csv plugin when opening commad dlimited csv files
 vim.cmd([[
   autocmd BufNewFile,BufRead *.csv   set filetype=csv
 ]])
+
+-- Auto-reload the file if changed externally
+vim.api.nvim_create_autocmd("FocusGained", {
+	pattern = "*",
+	command = "checktime",
+})
+
+-- Auto-Remove Trailing Whitespace on Save
+vim.api.nvim_create_autocmd("BufWritePre", {
+	pattern = "*",
+	command = "%s/\\s\\+$//e",
+})
