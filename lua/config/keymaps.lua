@@ -40,3 +40,24 @@ vim.keymap.set(
 	[[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]],
 	{ desc = "Global search and replace" }
 )
+
+-- yank entire file
+vim.keymap.set("n", "<leader>ya", "0ggVGy", { desc = "Yank entire file" })
+
+-- close window or delete buffer
+vim.keymap.set("n", "<leader>X", function()
+	local wins = vim.api.nvim_tabpage_list_wins(0)
+	if #wins > 1 then
+		vim.cmd("close")
+	else
+		vim.cmd("bdelete")
+	end
+end, { desc = "Close window if in split else delete buffer" })
+
+-- delete line but if empty don't put it in any regiester
+vim.keymap.set("n", "dd", function()
+	if vim.api.nvim_get_current_line():match("^%s*$") then
+		return '"_dd'
+	end
+	return "dd"
+end, { expr = true, desc = "Delete line but if empty don't put it in any regiester" })
