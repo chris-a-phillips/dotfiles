@@ -1,66 +1,58 @@
+-- since this is just an example spec, don't actually load anything here and return an empty spec
+-- stylua: ignore
+-- if true then return {} end
+
+-- every spec file under the "plugins" directory will be loaded automatically by lazy.nvim
+--
+-- In your plugin files, you can:
+-- * add extra plugins
+-- * disable/enabled LazyVim plugins
+-- * override the configuration of LazyVim plugins
 return {
-  -- 1️⃣ Load LazyVim Core Plugins First
-  { import = "lazyvim.plugins" },
+  -- add gruvbox
+  { "ellisonleao/gruvbox.nvim" },
 
-  -- 2️⃣ Load LazyVim Extras Next
-  { import = "lazyvim.plugins.extras.ui.mini-starter" },
-  { import = "lazyvim.plugins.extras.lang.json" },
-  { import = "lazyvim.plugins.extras.lang.typescript" },
-
-  -- 3️⃣ Now Load Your Custom Plugins
-
-  -- Add colorschemes
-  { "folke/tokyonight.nvim" },
-
-  -- Configure LazyVim to use tokyonight theme
-
+  -- Configure LazyVim to load gruvbox
   {
-    "folke/tokyonight.nvim",
+    "LazyVim/LazyVim",
     opts = {
-      transparent = true, -- This enables transparency
-      style = "storm", -- You can change this to 'night', 'moon', or 'day'
-      terminal_colors = true,
-      styles = {
-        sidebars = "transparent", -- Sidebar transparency
-        floats = "transparent", -- Floating window transparency
-      },
+      colorscheme = "gruvbox",
     },
-    config = function(_, opts)
-      require("tokyonight").setup(opts)
-      vim.cmd([[colorscheme tokyonight]])
-    end,
   },
 
-  -- Change Trouble config
+  -- change trouble config
   {
     "folke/trouble.nvim",
+    -- opts will be merged with the parent spec
     opts = { use_diagnostic_signs = true },
   },
 
-  -- Disable Trouble
-  -- { "folke/trouble.nvim", enabled = false },
+  -- disable trouble
+  { "folke/trouble.nvim", enabled = false },
 
-  -- Override nvim-cmp and add cmp-emoji
+  -- override nvim-cmp and add cmp-emoji
   {
     "hrsh7th/nvim-cmp",
     dependencies = { "hrsh7th/cmp-emoji" },
+    ---@param opts cmp.ConfigSchema
     opts = function(_, opts)
       table.insert(opts.sources, { name = "emoji" })
     end,
   },
 
-  -- Change some Telescope options and add a keymap
+  -- change some telescope options and a keymap to browse plugin files
   {
     "nvim-telescope/telescope.nvim",
     keys = {
+      -- add a keymap to browse plugin files
+      -- stylua: ignore
       {
         "<leader>fp",
-        function()
-          require("telescope.builtin").find_files({ cwd = require("lazy.core.config").options.root })
-        end,
+        function() require("telescope.builtin").find_files({ cwd = require("lazy.core.config").options.root }) end,
         desc = "Find Plugin File",
       },
     },
+    -- change some options
     opts = {
       defaults = {
         layout_strategy = "horizontal",
@@ -71,52 +63,84 @@ return {
     },
   },
 
-  -- Add pyright to LSP
+  -- add pyright to lspconfig
   {
     "neovim/nvim-lspconfig",
+    ---@class PluginLspOpts
     opts = {
+      ---@type lspconfig.options
       servers = {
+        -- python
+        -- pyright will be automatically installed with mason and loaded with lspconfig
         pyright = {},
-        -- black = {},
+        black = {},
+        -- javascript
         eslint = {},
+        --typescript
+        -- ts_standard = {},
+        -- css
+        -- css_variables = {},
+        -- c#
+        -- csharp_ls = {},
+        -- emmet
         emmet_language_server = {},
         emmet_ls = {},
+        -- go
         gopls = {},
+        -- sql
         sqlls = {},
+        -- markdown
         markdown_oxide = {},
+        -- lua
         lua_ls = {},
+        -- rust
         rust_analyzer = {},
+        -- php
         phpactor = {},
       },
     },
   },
 
-  -- Add tsserver and configure with typescript.nvim
+  -- add tsserver and setup with typescript.nvim instead of lspconfig
   {
     "neovim/nvim-lspconfig",
     dependencies = {
       "jose-elias-alvarez/typescript.nvim",
       init = function()
         require("lazyvim.util").lsp.on_attach(function(_, buffer)
-          vim.keymap.set("n", "<leader>co", "TypescriptOrganizeImports", { buffer = buffer, desc = "Organize Imports" })
+          -- stylua: ignore
+          vim.keymap.set( "n", "<leader>co", "TypescriptOrganizeImports", { buffer = buffer, desc = "Organize Imports" })
           vim.keymap.set("n", "<leader>cR", "TypescriptRenameFile", { desc = "Rename File", buffer = buffer })
         end)
       end,
     },
+    ---@class PluginLspOpts
     opts = {
+      ---@type lspconfig.options
       servers = {
+        -- tsserver will be automatically installed with mason and loaded with lspconfig
         tsserver = {},
       },
+      -- you can do any additional lsp server setup here
+      -- return true if you don't want this server to be setup with lspconfig
+      ---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
       setup = {
+        -- example to setup with typescript.nvim
         tsserver = function(_, opts)
           require("typescript").setup({ server = opts })
           return true
         end,
+        -- Specify * to use this function as a fallback for any server
+        -- ["*"] = function(server, opts) end,
       },
     },
   },
 
-  -- Add more Treesitter parsers
+  -- for typescript, LazyVim also includes extra specs to properly setup lspconfig,
+  -- treesitter, mason and typescript.nvim. So instead of the above, you can use:
+  { import = "lazyvim.plugins.extras.lang.typescript" },
+
+  -- add more treesitter parsers
   {
     "nvim-treesitter/nvim-treesitter",
     opts = {
@@ -139,15 +163,21 @@ return {
     },
   },
 
-  -- Extend Treesitter parsers
+  -- since `vim.tbl_deep_extend`, can only merge tables and not lists, the code above
+  -- would overwrite `ensure_installed` with the new value.
+  -- If you'd rather extend the default config, use the code below instead:
   {
     "nvim-treesitter/nvim-treesitter",
     opts = function(_, opts)
-      vim.list_extend(opts.ensure_installed, { "tsx", "typescript" })
+      -- add tsx and treesitter
+      vim.list_extend(opts.ensure_installed, {
+        "tsx",
+        "typescript",
+      })
     end,
   },
 
-  -- Customize Lualine
+  -- the opts function can also be used to change the default opts:
   {
     "nvim-lualine/lualine.nvim",
     event = "VeryLazy",
@@ -160,18 +190,24 @@ return {
     end,
   },
 
-  -- Override Lualine defaults
+  -- or you can return new options to override all the defaults
   {
     "nvim-lualine/lualine.nvim",
     event = "VeryLazy",
     opts = function()
       return {
-        --[[ Custom Lualine Config ]]
+        --[[add your custom lualine config here]]
       }
     end,
   },
 
-  -- Add Mason tools
+  -- use mini.starter instead of alpha
+  { import = "lazyvim.plugins.extras.ui.mini-starter" },
+
+  -- add jsonls and schemastore packages, and setup treesitter for json, json5 and jsonc
+  { import = "lazyvim.plugins.extras.lang.json" },
+
+  -- add any tools you want to have installed below
   {
     "williamboman/mason.nvim",
     opts = {
@@ -180,85 +216,6 @@ return {
         "shellcheck",
         "shfmt",
         "flake8",
-      },
-    },
-  },
-
-  -- EXTRA PLUGINS
-
-  -- Arrow.nvim
-  {
-    "otavioschwanck/arrow.nvim",
-    dependencies = { "nvim-tree/nvim-web-devicons" },
-    opts = {
-      show_icons = true,
-      leader_key = ";",
-      buffer_leader_key = "'",
-      mappings = {
-        edit = "e",
-        delete_mode = "d",
-        clear_all_items = "C",
-        toggle = "s",
-        open_vertical = "|",
-        open_horizontal = "-",
-        quit = "q",
-        remove = "x",
-        next_item = "]",
-        prev_item = "[",
-      },
-    },
-  },
-
-  -- Auto-activate Python virtual environments
-  { "sansyrox/vim-python-virtualenv" },
-
-  -- Screenkey
-  {
-    "NStefan002/screenkey.nvim",
-    lazy = false,
-    version = "*",
-  },
-
-  -- Undotree
-  {
-    "jiaoshijie/undotree",
-    dependencies = "nvim-lua/plenary.nvim",
-    config = true,
-    keys = {
-      { "<leader>u", "<cmd>lua require('undotree').toggle()<cr>" },
-    },
-  },
-
-  -- Multiple cursors
-  { "mg979/vim-visual-multi" },
-
-  -- Tmux navigation
-  {
-    "christoomey/vim-tmux-navigator",
-    cmd = {
-      "TmuxNavigateLeft",
-      "TmuxNavigateDown",
-      "TmuxNavigateUp",
-      "TmuxNavigateRight",
-      "TmuxNavigatePrevious",
-    },
-    keys = {
-      { "<c-h>", "<cmd><C-U>TmuxNavigateLeft<cr>" },
-      { "<c-j>", "<cmd><C-U>TmuxNavigateDown<cr>" },
-      { "<c-k>", "<cmd><C-U>TmuxNavigateUp<cr>" },
-      { "<c-l>", "<cmd><C-U>TmuxNavigateRight<cr>" },
-      { "<c-\\>", "<cmd><C-U>TmuxNavigatePrevious<cr>" },
-    },
-  },
-  -- Snacks exploerer options
-  {
-    {
-      "folke/snacks.nvim",
-      opts = {
-        picker = {
-          hidden = true, -- for hidden files
-          ignored = true, -- for .gitignore files
-        },
       },
     },
   },
