@@ -25,7 +25,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 vim.defer_fn(function()
 	vim.cmd("set number")
 	vim.cmd("set relativenumber")
-	vim.cmd("wincmd l")
+	vim.api.nvim_input("<C-l>")
 end, 100) -- Small delay to ensure LazyVim finishes loading
 
 -- Automaticaly invoke rainbow csv plugin when opening commad dlimited csv files
