@@ -17,3 +17,4 @@ vim.keymap.set("n", "<S-Right>", ":vertical resize -5<CR>", { desc = "Decrease w
 vim.keymap.set("n", "<S-Left>", ":vertical resize +5<CR>", { desc = "Increase window width" })
 vim.keymap.set("n", "<S-Up>", ":resize +5<CR>", { desc = "Increase window height" })
 vim.keymap.set("n", "<S-Down>", ":resize -5<CR>", { desc = "Decrease window height" })
+vim.keymap.set("n", "gp", "<cmd>lua require('goto-preview').goto_preview_definition()<CR>", { noremap = true })

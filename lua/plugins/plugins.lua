@@ -92,5 +92,50 @@ if true then
       lazy = false,
       version = "*",
     },
+    -- Supermaven
+    {
+      "supermaven-inc/supermaven-nvim",
+      version = "*", -- or specify a version string, e.g., "1.0.0"
+      lazy = false, -- Set to true if you want to load the plugin lazily
+      config = function()
+        require("supermaven-nvim").setup({})
+      end,
+    },
+    -- Multiple cursors
+    {
+      "mg979/vim-visual-multi",
+      branch = "master",
+      config = function()
+        -- Any specific configuration for vim-visual-multi can go here
+      end,
+    },
+    -- Go to preview
+    {
+      "rmagatti/goto-preview",
+      event = "BufEnter",
+      config = true, -- necessary as per https://github.com/rmagatti/goto-preview/issues/88
+    },
+    -- Vim motions practice
+    { "ThePrimeagen/vim-be-good" }, -- start with practice :VimBeGood
+    -- View CSV files
+    {
+      "cameron-wags/rainbow_csv.nvim",
+      config = true,
+      ft = {
+        "csv",
+        "tsv",
+        "csv_semicolon",
+        "csv_whitespace",
+        "csv_pipe",
+        "rfc_csv",
+        "rfc_semicolon",
+      },
+      cmd = {
+        "RainbowDelim",
+        "RainbowDelimSimple",
+        "RainbowDelimQuoted",
+        "RainbowMultiDelim",
+      },
+    },
   }
 end

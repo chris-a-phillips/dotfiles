@@ -26,3 +26,7 @@ vim.defer_fn(function()
   vim.cmd("set number")
   vim.cmd("set relativenumber")
 end, 100) -- Small delay to ensure LazyVim finishes loading
+
+vim.cmd([[
+  autocmd BufNewFile,BufRead *.csv   set filetype=csv
+]])
