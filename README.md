@@ -202,3 +202,23 @@ bash ~/.dotfiles/install.sh
 
 
 <!--TODO: list out all utility applications and add them to readme and install script-->
+to add:
+- Docker
+Vs code
+Postman
+iterm
+Figma
+Clipy
+Raycast -> get backup folder too
+Numi
+Monitor control
+Dropzone
+Amphetamine
+Itsycal
+Alttab
+Rectangle pro
+Dock door
+Hidden bar
+Background music
+Spotify
+Obsidian
