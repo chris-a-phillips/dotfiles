@@ -1,7 +1,9 @@
 live_config_reload = true
 
 [window]
-opacity = 0.9
+opacity = 0.85
+blur = true
+padding = { x = 5, y = 5}
 
 [font.normal]
 family = "Hack Nerd Font"
@@ -11,9 +13,8 @@ size = 12.75
 
 [keyboard]
 bindings = [
-  { key: W, mods: Alt, chars: "\x1bw" },
-  { key: B, mods: Alt, chars: "\x1bb" }
-
+  { key = "W", mods = "Alt", chars = "\u001BF" },
+  { key = "B",  mods = "Alt", chars = "\u001BB" },
 ]
 
 # TokyoNight Alacritty Colors
