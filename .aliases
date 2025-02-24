@@ -9,6 +9,7 @@ alias .....="cd ../../../.."                      # Go up four directories
 alias ~="cd ~"                                    # Go to the home directory
 alias :q="exit"
 alias lsa="ls -a"                                 # Print hidden files
+alias edot="cd ~/.dotfiles/ && nvim ."                  # Open Neovim config directory
 
 # Terminal Shortcuts
 alias c="clear"                                   # Clear the terminal screen
@@ -25,6 +26,8 @@ alias fzf="fzf --preview 'bat --style=numbers --color=always --line-range :500 {
 alias als="bat ~/.dotfiles/.aliases"              # View personal aliases file
 alias fns="ls ~/bin"                              # List files in the ~/bin directory
 alias ppath="echo "${PATH//:/$'\n'}""             # Print each PATH directory on a new line
+alias pvars='printenv | awk -F= "{ printf \"%-30s %s\n\", \$1, \$2 }" | sort' # Print each $VARIABLE
+alias myip="curl ifconfig.me"                    # Get public IP
 
 # Aliases for utilities downloaded from Homebrew
 alias twf='twf --previewCmd="bat --color=always --style=grid,numbers {}" -preview=true'  # Fuzzy file finder with preview using bat
@@ -84,4 +87,3 @@ alias lg3=lg3-specific
 # Python
 alias python='python3'                              # Use Python 3 as default interpreter
 alias pip='pip3'                                    # Use pip3 as default package manager
-
