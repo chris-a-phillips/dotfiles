@@ -1,0 +1,23 @@
+tt.*
+.tests
+doc/tags
+debug
+.repro
+foo.*
+*.log
+data
+
+
+# Neovim-specific files
+.neoconf.json
+lazy-lock.json
+lazyvim.json
+stylua.toml
+
+# Potential cache directories
+.cache/
+.local/
+
+# Miscellaneous
+.vscode/
+
