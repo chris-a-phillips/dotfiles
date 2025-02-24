@@ -137,6 +137,7 @@ install_languages() {
 # 🟢 Apply macOS Defaults
 set_macos_defaults() {
   echo "🛠 Configuring macOS system preferences..."
+  # TODO: turn off monitor control keyboard shortcuts
   defaults write NSGlobalDomain NSWindowResizeTime -float 0.1
   defaults write NSGlobalDomain AppleShowAllExtensions -bool true
   defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
