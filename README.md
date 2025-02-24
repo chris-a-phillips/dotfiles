@@ -201,3 +201,4 @@ bash ~/.dotfiles/install.sh
 🚀 **Your Mac will be fully set up with one command!**
 
 
+<!--TODO: list out all utility applications and add them to readme and install script-->
