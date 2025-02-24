@@ -1,13 +1,23 @@
-## Steps to bootstrap a new Mac
 
-1. Install Apple's Command Line Tools, which are prerequisites for Git and Homebrew.
+# **🚀 Dotfiles Setup & Installation Guide**
+A complete **automated setup** for a new **macOS** environment using **`chezmoi`**, **Homebrew**, **tmux**, **Neovim**, **Alacritty**, and more.
+
+---
+
+## **📌 Steps to Bootstrap a New Mac**
+Follow these steps to **set up your Mac from scratch**.
+
+### **1️⃣ Install Apple's Command Line Tools**
+Before installing anything else, install Apple's Command Line Tools, which are required for **Git** and **Homebrew**.
 
 ```zsh
 xcode-select --install
 ```
 
+---
 
-2. Clone repo into new hidden directory.
+### **2️⃣ Clone the Dotfiles Repo**
+Clone your **dotfiles repository** into a hidden directory.
 
 ```zsh
 # Use SSH (if set up)...
@@ -17,40 +27,177 @@ git clone git@github.com:chris-a-phillips/dotfiles.git ~/.dotfiles
 git clone https://github.com/chris-a-phillips/dotfiles.git ~/.dotfiles
 ```
 
+---
 
-3. Create symlinks in the Home directory to the real files in the repo.
+### **3️⃣ Run the Install Script (Automated Setup)**
+Instead of manually setting up **symlinks**, **installing Homebrew**, and configuring tools, run the install script:
 
 ```zsh
-# There are better and less manual ways to do this;
-# investigate install scripts and bootstrapping tools.
-
-ln -s ~/.dotfiles/.zshrc ~/.zshrc
-ln -s ~/.dotfiles/.gitconfig ~/.gitconfig
+bash ~/.dotfiles/install.sh
 ```
 
+💪 **This will:**
+- Install **Homebrew** (if missing)
+- Install **all CLI tools, GUI apps, and fonts** from the **Brewfile**
+- Install **Nerd Fonts** from the **fonts.txt** list
+- Apply **chezmoi-managed dotfiles** (`.zshrc`, `.gitconfig`, `.tmux.conf`, etc.)
+- Ensure all symlinks are **automatically** created
 
-4. Install Homebrew, followed by the software listed in the Brewfile.
+---
+
+### **4️⃣ Verify Everything is Installed**
+After the script runs, check that everything is set up:
 
 ```zsh
-# These could also be in an install script.
+chezmoi managed  # Shows all files managed by chezmoi
+ls -l ~/.zshrc ~/.gitconfig ~/.tmux.conf ~/.config/alacritty/alacritty.yml
+brew list        # Shows installed Homebrew packages
+```
 
-# Install Homebrew
+If any of your **dotfiles are missing**, run:
+
+```zsh
+chezmoi apply
+```
+
+---
+
+### **5️⃣ Copy Custom Scripts to `~/bin` (Optional)**
+If you have custom scripts that need to be in your `$PATH`, do the following:
+
+```zsh
+mkdir -p ~/bin
+cp -r ~/.dotfiles/bin/* ~/bin/
+chmod +x ~/bin/*
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+---
+
+# **📂 Tooling Overview**
+This section provides details about each tool included in your dotfiles.
+
+### **🟢 Homebrew**
+Homebrew is used to install packages and manage system dependencies.
+
+#### **Installation**
+Already handled by `install.sh`.
+To manually install:
+```zsh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Then pass in the Brewfile location...
-brew bundle --file ~/.dotfiles/Brewfile
-
-# ...or move to the directory first.
-cd ~/.dotfiles && brew bundle
 ```
 
+#### **Brewfile (List of Packages)**
+All installed packages are listed in `~/.dotfiles/Brewfile`.
 
-5. Copy scripts to bin folder
-  - copy directory from .dotfiles to ~/bin
-  - chmod +x all scripts
-  - add path to PATH
+To manually install packages:
+```zsh
+brew bundle --file ~/.dotfiles/Brewfile
+```
 
-# 💤 LazyVim
+To update:
+```zsh
+brew update && brew upgrade
+```
 
-A starter template for [LazyVim](https://github.com/LazyVim/LazyVim).
-Refer to the [documentation](https://lazyvim.github.io/installation) to get started.
+---
+
+### **🟢 Neovim (LazyVim)**
+Neovim is set up with [LazyVim](https://github.com/LazyVim/LazyVim).
+
+#### **Configuration**
+- Config stored in `~/.config/nvim`
+- Managed via `chezmoi`
+- Uses `LazyVim` as the default setup
+
+#### **Manual Installation**
+```zsh
+brew install neovim
+```
+
+#### **Updating Plugins**
+Inside Neovim, run:
+```
+:Lazyman
+```
+Or from the terminal:
+```zsh
+nvim +Lazy update +qall
+```
+
+---
+
+### **🟢 Tmux**
+Tmux is a terminal multiplexer for managing multiple terminal sessions.
+
+#### **Configuration**
+- Config stored in `~/.tmux.conf`
+- Managed via `chezmoi`
+
+#### **Manual Installation**
+```zsh
+brew install tmux
+```
+
+#### **Useful Commands**
+```zsh
+tmux new -s mysession  # Start a new session
+tmux ls                # List active sessions
+tmux attach -t mysession  # Attach to a session
+tmux kill-session -t mysession  # Kill a session
+```
+
+---
+
+### **🟢 Alacritty (Terminal Emulator)**
+Alacritty is a fast GPU-accelerated terminal.
+
+#### **Configuration**
+- Config stored in `~/.config/alacritty/alacritty.yml`
+- Managed via `chezmoi`
+
+#### **Manual Installation**
+```zsh
+brew install alacritty
+```
+
+---
+
+### **🟢 Fonts (Nerd Fonts)**
+Nerd Fonts are installed via Homebrew and custom downloads.
+
+#### **Manual Installation**
+```zsh
+brew install --cask font-jetbrains-mono-nerd-font
+brew install --cask font-fira-code-nerd-font
+```
+
+#### **Additional Fonts**
+Extra Nerd Fonts are downloaded via `fonts.txt`.
+
+To manually install them:
+```zsh
+mkdir -p ~/Library/Fonts
+cd ~/Library/Fonts
+while IFS= read -r font_url; do
+    font_name=$(basename "$font_url" .zip)
+    curl -fLo "${font_name}.zip" "$font_url"
+    unzip "${font_name}.zip" -d "$font_name"
+    rm "${font_name}.zip"
+done < ~/.dotfiles/fonts.txt
+```
+
+---
+
+# **🔥 TL;DR - One-Command Setup**
+After installing Apple's Command Line Tools (`xcode-select --install`), **run this:**
+
+```zsh
+bash ~/.dotfiles/install.sh
+```
+
+💪 **Everything is installed automatically!**
+🚀 **Your Mac will be fully set up with one command!**
+
+
