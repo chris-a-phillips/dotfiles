@@ -1,0 +1,38 @@
+# ~/.config/tmuxinator/oc.yml
+
+name: oc
+root: ~
+
+windows:
+  - zsh:
+      panes:
+        -
+  - llm:
+      panes:
+        - llm chat
+  - bapi:
+      panes:
+        - |
+          AWS_PROFILE=ProdReadOnly aws sso login
+          AWS_PROFILE=ProdReadOnly awslogin mysql-shell --db prod-cla-bapi8-us-east-1 --dbuser SamlDbReadAccess
+  - lazygit:
+      panes:
+        - |
+          lazygit
+          n
+  - mini-app:
+      root: ~/environment/oc/payment-management-miniapp
+      layout: main-vertical
+      panes:
+        - nvim .
+        -
+  - mgmt-papi:
+      root: ~/environment/oc/payment-management-product-api
+      layout: main-vertical
+      panes:
+        - nvim .
+        -
+  - x-in-y:
+      root: ~/code/x-in-y
+      panes:
+        - nvim .
