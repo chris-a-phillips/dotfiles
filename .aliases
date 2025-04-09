@@ -9,7 +9,10 @@ alias .....="cd ../../../.."                      # Go up four directories
 alias ~="cd ~"                                    # Go to the home directory
 alias :q="exit"
 alias lsa="ls -a"                                 # Print hidden files
+
+# Dev Aliases
 alias edot="cd ~/.dotfiles/ && nvim ."                  # Open Neovim config directory
+alias muxoc="tmuxinator start oc"
 
 # Terminal Shortcuts
 alias c="clear"                                   # Clear the terminal screen
