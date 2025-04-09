@@ -15,7 +15,7 @@
 #   Activates virtual environment or creates a new one.
 #######################################
 activate_venv() {
-  if [ -f "venv/bin/activate" ]; then
+  if [ -f ".venv/bin/activate" ]; then
     source .venv/bin/activate
     echo "Activated existing virtual environment."
   else
