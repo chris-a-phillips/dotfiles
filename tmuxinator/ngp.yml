@@ -1,0 +1,31 @@
+# /Users/chris.phillips/.config/tmuxinator/ngp.yml
+
+name: ngp
+root: ~/
+
+windows:
+  - zsh:
+      panes:
+        -
+  - llm:
+      panes:
+        - llm chat
+  - p-w-mfe:
+      layout: main-vertical
+      panes:
+        - cd ~/environment/ngp/pipeline-workflow-mfe/; nvim .
+        - cd ~/environment/ngp/pipeline-workflow-mfe/
+  - soa-importer:
+      layout: main-vertical
+      panes:
+        - cd ~/environment/ngp/soa-importer/; source .venv/bin/activate; nvim .
+        - cd ~/environment/ngp/soa-importer/; source .venv/bin/activate
+  - lazygit:
+      panes:
+        - lazygit; n
+  - bapi:
+      panes:
+        - sleep 120; AWS_PROFILE=ProdReadOnly aws sso login; AWS_PROFILE=ProdReadOnly awslogin mysql-shell --db prod-cla-bapi8-us-east-1 --dbuser SamlDbReadAccess
+  - x-in-y:
+      panes:
+        - cd ~/code/x-in-y/; nvim .

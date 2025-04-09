@@ -1,0 +1,30 @@
+# /Users/chris.phillips/.config/tmuxinator/pipelines_session.yml
+
+name: pipelines_session
+root: ~/
+
+windows:
+  - zsh:
+      panes:
+        -
+  - integration-pipelines|luigi:
+      layout: main-vertical
+      panes:
+        - cd ~/environment/dim/draw/integration-pipelines; conda activate env; make sso_login; make ecr_login
+        - cd ~/environment/dim/draw/integration-pipelines; conda activate env; luigid
+        - cd ~/environment/dim/draw/integration-pipelines; conda activate env
+  - lazygit:
+      panes:
+        - lazygit
+  - llm:
+      panes:
+        - llm chat
+  - built-data-pulls:
+      panes:
+        - cd ~/environment/dim/draw/built-data-pulls/; make auth_prod && make auth_integrations; assume dim
+  - bapi:
+      panes:
+        - sleep 120; assume prod-developer; AWS_PROFILE=prod-developer awslogin mysql-shell --db prod-cla-bapi8-replica-us-east-1 --dbuser SamlDbReadAccess
+  - nvim:
+      panes:
+        - cd ~/.config/nvim/; nvim .
