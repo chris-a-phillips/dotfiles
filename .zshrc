@@ -101,47 +101,15 @@ unset __conda_setup
 # Custom function path
 fpath+=${ZDOTDIR:-~}/.zsh_functions
 
-# Script to take over environment for ngp
-takeover () {
-	target_env=$1
-	service_name=$2
-	target_role=$3
-	echo "Please select the development role where we will build:"
-	. assume "Built-Dev/BuiltDeveloper"
-	export AWS_PAGER=""
-	source_version=$(git rev-parse HEAD)
-	build_id=$(aws codebuild start-build \
-      --project-name $service_name-build \
-      --source-version "$source_version" \
-      --output json | jq -r '.build.id'
-      )
-	echo "Started build $build_id"
-	wait_for_build_completion () {
-		local build_id=$1
-		while true
-		do
-			build_status=$(aws codebuild batch-get-builds --ids "$build_id" | jq -r '.builds[0].buildStatus')
-			if [ "$build_status" = "SUCCEEDED" ]
-			then
-				echo "Build succeeded"
-				break
-			elif [ "$build_status" = "FAILED" ]
-			then
-				echo "Build failed"
-				return 1
-			fi
-			echo "Build status: $build_status - waiting for completion..."
-			sleep 10
-		done
-	}
-	wait_for_build_completion "$build_id"
-	echo "Please select the role where we will deploy:"
-	. assume "$target_role"
-	build_id=$(aws codebuild start-build \
-      --project-name "$target_env-$service_name" \
-      --source-version "$source_version" \
-      --output json | jq -r '.build.id'
-      )
-	echo "Started build for $service_name in $target_env: $build_id"
-	wait_for_build_completion "$build_id"
-}
+# History file setup
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+
+# Only skip saving identical commands run back-to-back
+setopt HIST_IGNORE_DUPS
+
+# Helpful additional settings (but not full deduping)
+setopt INC_APPEND_HISTORY      # Immediately write to file
+setopt SHARE_HISTORY           # Share across sessions
+setopt HIST_REDUCE_BLANKS      # Trim extra spaces
