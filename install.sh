@@ -123,6 +123,7 @@ install_extra_apps() {
 
   if [[ "$setup_type" == "personal" ]]; then
     brew install --cask rectangle raycast discord slack spotify
+    #TODO: make sure to intall alacritty this way: brew install --cask alacritty --no-quarantine
   elif [[ "$setup_type" == "work" ]]; then
     brew install --cask zoom microsoft-teams docker iterm2
   fi
