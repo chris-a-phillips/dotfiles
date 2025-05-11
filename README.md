@@ -203,7 +203,7 @@ bash ~/.dotfiles/install.sh
 
 <!--TODO: list out all utility applications and add them to readme and install script-->
 to add:
-- Docker
+- jesseduffield/lazydocker
 Vs code
 Postman
 iterm
