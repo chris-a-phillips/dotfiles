@@ -203,11 +203,13 @@ bash ~/.dotfiles/install.sh
 
 <!--TODO: list out all utility applications and add them to readme and install script-->
 to add:
-- jesseduffield/lazydocker
 Vs code
 Postman
 iterm
-Figma
+Notion
+XCode
+Zoom
+Giphy Capture
 Clipy
 Raycast -> get backup folder too
 Numi
@@ -222,3 +224,4 @@ Hidden bar
 Background music
 Spotify
 Obsidian
+DB Browser for SQLite
