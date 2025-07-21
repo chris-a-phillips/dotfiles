@@ -59,7 +59,9 @@ install_homebrew() {
 # 🟢 Install Brew Packages from Brewfile
 install_brew_packages() {
   echo "📦 Installing apps from Brewfile..."
-  brew bundle --file="$HOME/.dotfiles/Brewfile"
+  BREWFILE="$(chezmoi source-path)/Brewfile"
+  [[ -f "$BREWFILE" ]] || BREWFILE="$HOME/.dotfiles/Brewfile"  # fallback
+  brew bundle --file="$BREWFILE"
 }
 
 # 🟢 Install Linux Packages
@@ -84,6 +86,53 @@ install_nerd_fonts() {
     rm "${font_name}.zip"
   done <"$HOME/.dotfiles/fonts.txt"
 }
+
+install_manual_apps() {
+  echo "📥 Installing manually managed apps..."
+
+  # Install cask apps
+  brew install --cask \
+    visual-studio-code \
+    postman \
+    iterm2 \
+    notion \
+    zoom \
+    giphy-capture \
+    clipy \
+    raycast \
+    numi \
+    monitorcontrol \
+    dropzone \
+    amphetamine \
+    itsycal \
+    alt-tab \
+    rectangle-pro \
+    dockutil \
+    hiddenbar \
+    background-music \
+    spotify \
+    obsidian \
+    db-browser-for-sqlite
+
+  echo "✅ GUI apps installed."
+
+  # Special: Restore Raycast config if backup exists
+  if [[ -d "$HOME/.dotfiles/raycast-backup" ]]; then
+    echo "🗂 Restoring Raycast settings..."
+    mkdir -p "$HOME/Library/Application Support/com.raycast.macos"
+    cp -R "$HOME/.dotfiles/raycast-backup/"* "$HOME/Library/Application Support/com.raycast.macos/"
+  fi
+
+  # Special: Restore Rectangle Pro settings if backup exists
+  if [[ -f "$HOME/.dotfiles/rectangle-pro/com.knollsoft.Rectangle-Pro.plist" ]]; then
+    echo "🗂 Restoring Rectangle Pro settings..."
+    mkdir -p "$HOME/Library/Preferences"
+    cp "$HOME/.dotfiles/rectangle-pro/com.knollsoft.Rectangle-Pro.plist" "$HOME/Library/Preferences/"
+    # Load settings immediately
+    defaults import com.knollsoft.Rectangle-Pro "$HOME/Library/Preferences/com.knollsoft.Rectangle-Pro.plist"
+  fi
+}
+
 
 # 🟢 Set Up Chezmoi and Apply Dotfiles
 setup_chezmoi() {
