@@ -7,37 +7,90 @@
 #######################################
 # Create new git branch
 # Arguments:
-#   None
+#   branch_name?: string
 # Outputs:
 #   None
 #######################################
 
+# Get current branch
 current="$(git branch | grep "*" | cut -b 3-)"
 
-# if arg is not set
-if [ -z "${1}" ]; then
-    echo -e "Name of new branch?"
-    read branch
-    # and if on master
-    if [ "$current" == 'master' ];then
-        echo -e "Creating ${YELLOW} $branch ${NC} from ${RED}Master${NC}..."
-        git checkout master && git pull origin master && git checkout -b "$branch"
-    else
-        #if not on master
-        echo -e "Create ${BBLUE} $branch ${NC} from ${YELLOW} $current (c) ${NC} or from ${RED}Master (m)${NC}?"
-        read -p "current(c) / Master(m) ?" cm
-        [ $cm == 'c' ] && git checkout -b "$branch"
-        [ $cm == 'm' ] && git checkout master && git pull origin master && git checkout -b "$branch"
+# Get default branch (main, master, or whatever is configured)
+get_default_branch() {
+    # Try to get the default branch from git config
+    local default_branch=$(git config --get init.defaultBranch 2>/dev/null)
+    
+    # If not set, try to detect from remote
+    if [ -z "$default_branch" ]; then
+        default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
     fi
-#otherwise use $1 arg as branch name
-else
-    if [ "$current" == 'master' ];then
-        echo -e "Creating ${BBLUE} $1 ${NC} from ${RED}Master${NC}?"
-        git checkout master && git pull origin master && git checkout -b "$1"
+    
+    # If still not found, check if main or master exists
+    if [ -z "$default_branch" ]; then
+        if git show-ref --verify --quiet refs/heads/main; then
+            default_branch="main"
+        elif git show-ref --verify --quiet refs/heads/master; then
+            default_branch="master"
+        else
+            # Fallback to current branch if no default found
+            default_branch="$current"
+        fi
+    fi
+    
+    echo "$default_branch"
+}
+
+# Get the default branch
+default_branch=$(get_default_branch)
+
+# Function to create branch from default
+create_from_default() {
+    local branch_name="$1"
+    echo -e "Creating ${YELLOW}$branch_name${NC} from ${RED}$default_branch${NC}..."
+    git checkout "$default_branch" && git pull origin "$default_branch" && git checkout -b "$branch_name"
+}
+
+# Function to create branch from current
+create_from_current() {
+    local branch_name="$1"
+    echo -e "Creating ${YELLOW}$branch_name${NC} from current branch ${BBLUE}$current${NC}..."
+    git checkout -b "$branch_name"
+}
+
+# Function to ask user for source branch
+ask_for_source() {
+    local branch_name="$1"
+    echo -e "Create ${YELLOW}$branch_name${NC} from ${BBLUE}$current (c)${NC} or from ${RED}$default_branch (d)${NC}?"
+    read -p "current(c) / $default_branch(d) ?" choice
+    case "$choice" in
+        c|C) create_from_current "$branch_name" ;;
+        d|D) create_from_default "$branch_name" ;;
+        *) echo "Invalid choice. Using current branch." && create_from_current "$branch_name" ;;
+    esac
+}
+
+# Main logic
+if [ -z "${1}" ]; then
+    # No branch name provided, ask for it
+    echo -e "Name of new branch?"
+    read branch_name
+    
+    # If already on default branch, just create from current
+    if [ "$current" == "$default_branch" ]; then
+        create_from_current "$branch_name"
     else
-        echo -e "Create ${BBLUE} $1 ${NC} from ${YELLOW} $current (c) ${NC} or from ${RED}Master (m)${NC}?"
-        read -p "current(c) / Master(m) ?" cm
-        [ $cm == 'c' ] && git checkout -b "$1"
-        [ $cm == 'm' ] && git checkout master && git pull origin master && git checkout -b "$1"
+        # Ask user which branch to create from
+        ask_for_source "$branch_name"
+    fi
+else
+    # Branch name provided as argument
+    branch_name="$1"
+    
+    # If already on default branch, just create from current
+    if [ "$current" == "$default_branch" ]; then
+        create_from_current "$branch_name"
+    else
+        # Ask user which branch to create from
+        ask_for_source "$branch_name"
     fi
 fi
