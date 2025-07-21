@@ -1,53 +1,48 @@
 #!/bin/bash
 
-set -e # Exit if any command fails
+set -e  # Exit on error
 
-# 🟢 Ask for Personal or Work Setup
+# Spinner for visual feedback
+spinner() {
+  local pid=$1
+  local msg=$2
+  local delay=0.1
+  local spinstr='|/-\\'
+  echo -n " $msg"
+  while ps -p "$pid" &>/dev/null; do
+    local temp=${spinstr#?}
+    printf " [%c]  " "$spinstr"
+    spinstr=$temp${spinstr%"$temp"}
+    sleep $delay
+    printf "\b\b\b\b\b\b"
+  done
+  echo " ✅"
+}
+
+run_with_spinner() {
+  "$@" & spinner $! "$1"
+}
+
+# Ask Personal or Work
 choose_setup_type() {
-  echo "💻 Is this a Personal or Work computer?"
+  echo -e "\n💻 Is this a Personal or Work computer?"
   select choice in "Personal" "Work"; do
     case $choice in
-    Personal)
-      setup_type="personal"
-      break
-      ;;
-    Work)
-      setup_type="work"
-      break
-      ;;
-    *) echo "Invalid choice. Please enter 1 or 2." ;;
+      Personal) setup_type="personal"; break ;;
+      Work) setup_type="work"; break ;;
+      *) echo "Invalid choice. Please enter 1 or 2." ;;
     esac
   done
 }
 
-# 🟢 Ask Before Running a Step
+# Confirm Before Step
 confirm_step() {
-  echo "$1 (y/n)?"
+  echo -e "\n🔹 $1 (y/n)?"
   read -r response
-  if [[ "$response" =~ ^[Yy]$ ]]; then
-    return 0 # Proceed
-  else
-    return 1 # Skip
-  fi
+  [[ "$response" =~ ^[Yy]$ ]]
 }
 
-# 🟢 Detect OS
-detect_os() {
-  OS="$(uname)"
-  if [[ "$OS" == "Darwin" ]]; then
-    echo "🍏 macOS detected."
-    confirm_step "Install Homebrew?" && install_homebrew
-    confirm_step "Install Brew packages?" && install_brew_packages
-  elif [[ "$OS" == "Linux" ]]; then
-    echo "🐧 Linux detected."
-    confirm_step "Install Linux packages?" && install_linux_packages
-  else
-    echo "❌ Unsupported OS: $OS"
-    exit 1
-  fi
-}
-
-# 🟢 Install Homebrew (macOS)
+# OS Detection and Package Install
 install_homebrew() {
   if ! command -v brew &>/dev/null; then
     echo "📦 Installing Homebrew..."
@@ -56,15 +51,12 @@ install_homebrew() {
   brew update
 }
 
-# 🟢 Install Brew Packages from Brewfile
 install_brew_packages() {
   echo "📦 Installing apps from Brewfile..."
-  BREWFILE="$(chezmoi source-path)/Brewfile"
-  [[ -f "$BREWFILE" ]] || BREWFILE="$HOME/.dotfiles/Brewfile"  # fallback
+  local BREWFILE="$HOME/.dotfiles/Brewfile"
   brew bundle --file="$BREWFILE"
 }
 
-# 🟢 Install Linux Packages
 install_linux_packages() {
   if command -v apt &>/dev/null; then
     sudo apt update
@@ -74,143 +66,154 @@ install_linux_packages() {
   fi
 }
 
-# 🟢 Install Nerd Fonts
-install_nerd_fonts() {
-  echo "💾 Installing Additional Nerd Fonts..."
-  mkdir -p ~/Library/Fonts
-  cd ~/Library/Fonts
-  while IFS= read -r font_url; do
-    font_name=$(basename "$font_url" .zip)
-    curl -fLo "${font_name}.zip" "$font_url"
-    unzip "${font_name}.zip" -d "$font_name"
-    rm "${font_name}.zip"
-  done <"$HOME/.dotfiles/fonts.txt"
+detect_os() {
+  OS="$(uname)"
+  echo -e "\n🔍 Detecting OS..."
+  case $OS in
+    Darwin)
+      echo "🍏 macOS detected."
+      confirm_step "Install Homebrew?" && run_with_spinner install_homebrew
+      confirm_step "Install Brew packages?" && run_with_spinner install_brew_packages
+      ;;
+    Linux)
+      echo "🐧 Linux detected."
+      confirm_step "Install Linux packages?" && run_with_spinner install_linux_packages
+      ;;
+    *)
+      echo "❌ Unsupported OS: $OS"
+      exit 1
+      ;;
+  esac
 }
 
-install_manual_apps() {
-  echo "📥 Installing manually managed apps..."
+# Fonts
+install_nerd_fonts() {
+  echo -e "\n💾 Installing Nerd Fonts..."
+  FONT_DIR="$HOME/Library/Fonts"
+  [[ "$(uname)" == "Linux" ]] && FONT_DIR="$HOME/.local/share/fonts"
+  mkdir -p "$FONT_DIR"
+  while IFS= read -r font_url; do
+    font_name=$(basename "$font_url" .zip)
+    curl -fLo "$font_name.zip" "$font_url"
+    unzip -o "$font_name.zip" -d "$FONT_DIR"
+    rm "$font_name.zip"
+  done < "$HOME/.dotfiles/fonts.txt"
+  echo "✅ Fonts installed."
+}
 
-  # Install cask apps
+# GUI Apps + Configs
+install_manual_apps() {
+  echo -e "\n📥 Installing manually managed apps..."
   brew install --cask \
-    visual-studio-code \
-    postman \
-    iterm2 \
-    notion \
-    zoom \
-    giphy-capture \
-    clipy \
-    raycast \
-    numi \
-    monitorcontrol \
-    dropzone \
-    amphetamine \
-    itsycal \
-    alt-tab \
-    rectangle-pro \
-    dockutil \
-    hiddenbar \
-    background-music \
-    spotify \
-    obsidian \
-    db-browser-for-sqlite
+    visual-studio-code postman iterm2 notion zoom giphy-capture \
+    clipy raycast numi monitorcontrol dropzone amphetamine \
+    itsycal alt-tab rectangle-pro dockutil hiddenbar \
+    background-music spotify obsidian db-browser-for-sqlite
 
   echo "✅ GUI apps installed."
 
-  # Special: Restore Raycast config if backup exists
-  if [[ -d "$HOME/.dotfiles/raycast-backup" ]]; then
+  # Raycast
+  RAYCAST_BACKUP="$HOME/.dotfiles/app_configs/raycast"
+  if [[ -d "$RAYCAST_BACKUP" ]]; then
     echo "🗂 Restoring Raycast settings..."
     mkdir -p "$HOME/Library/Application Support/com.raycast.macos"
-    cp -R "$HOME/.dotfiles/raycast-backup/"* "$HOME/Library/Application Support/com.raycast.macos/"
+    cp -R "$RAYCAST_BACKUP"/* "$HOME/Library/Application Support/com.raycast.macos/"
   fi
 
-  # Special: Restore Rectangle Pro settings if backup exists
-  if [[ -f "$HOME/.dotfiles/rectangle-pro/com.knollsoft.Rectangle-Pro.plist" ]]; then
+  # Rectangle Pro
+  RECTANGLE_PLIST="$HOME/.dotfiles/app_configs/rectangle-pro/com.knollsoft.Rectangle-Pro.plist"
+  if [[ -f "$RECTANGLE_PLIST" ]]; then
     echo "🗂 Restoring Rectangle Pro settings..."
     mkdir -p "$HOME/Library/Preferences"
-    cp "$HOME/.dotfiles/rectangle-pro/com.knollsoft.Rectangle-Pro.plist" "$HOME/Library/Preferences/"
-    # Load settings immediately
-    defaults import com.knollsoft.Rectangle-Pro "$HOME/Library/Preferences/com.knollsoft.Rectangle-Pro.plist"
+    cp "$RECTANGLE_PLIST" "$HOME/Library/Preferences/"
+    defaults import com.knollsoft.Rectangle-Pro "$RECTANGLE_PLIST"
   fi
 }
 
+# Git Config
+setup_git_config() {
+  echo -e "\n🔧 Setting up Git configuration..."
+  if ! git config --global user.name >/dev/null; then
+    read -p "🪪 Git user name: " git_name
+    git config --global user.name "$git_name"
+  fi
+  if ! git config --global user.email >/dev/null; then
+    read -p "📧 Git user email: " git_email
+    git config --global user.email "$git_email"
+  fi
+  [ -f "$HOME/.gitignore_global" ] && \
+    git config --global core.excludesfile "$HOME/.gitignore_global"
+  [[ "$(uname)" == "Darwin" ]] && \
+    git config --global credential.helper osxkeychain
+  echo "✅ Git is configured."
+}
 
-# 🟢 Set Up Chezmoi and Apply Dotfiles
+# SSH Setup
+setup_ssh() {
+  echo -e "\n🔐 Checking SSH key setup..."
+  if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
+    ssh-keygen -t ed25519 -C "$(git config --global user.email)" -f "$HOME/.ssh/id_ed25519" -N ""
+  fi
+  eval "$(ssh-agent -s)"
+  ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+  echo "🔑 Public key:\n"
+  cat ~/.ssh/id_ed25519.pub
+  echo "📋 Copy this to GitHub: https://github.com/settings/ssh/new"
+}
+
+# Dotfiles + Neovim
 setup_chezmoi() {
-  echo "💾 Applying chezmoi dotfiles..."
+  echo -e "\n💾 Applying chezmoi dotfiles..."
   if [ ! -d "$HOME/.local/share/chezmoi" ]; then
-    chezmoi init --apply yourusername # Change to your GitHub username
+    chezmoi init --apply git@github.com:yourusername/dotfiles.git
   else
     chezmoi apply
   fi
 }
 
-# 🟢 Ensure All Dotfiles Are Added to Chezmoi
 add_dotfiles_to_chezmoi() {
-  echo "🛠 Ensuring all dotfiles are added to chezmoi..."
+  echo -e "\n🛠 Ensuring all dotfiles are added to chezmoi..."
   FILES_TO_ADD=(
-    "$HOME/.tmux.conf"
-    "$HOME/.zshrc"
-    "$HOME/.gitconfig"
-    "$HOME/.config/alacritty/alacritty.yml"
-    "$HOME/.config/nvim"
+    "$HOME/.tmux.conf" "$HOME/.zshrc" "$HOME/.gitconfig"
+    "$HOME/.config/alacritty/alacritty.yml" "$HOME/.config/nvim"
   )
-
   for file in "${FILES_TO_ADD[@]}"; do
-    if [ -f "$file" ] || [ -d "$file" ]; then
-      chezmoi add "$file"
-    else
-      echo "⚠️  Skipping $file (not found)"
-    fi
+    [ -e "$file" ] && chezmoi add "$file" || echo "⚠️ Skipping $file"
   done
-
   chezmoi apply
 }
 
-# 🟢 Install Additional Mac Apps Based on Setup Type
-install_extra_apps() {
-  echo "📦 Installing additional macOS apps for $setup_type setup..."
-
-  if [[ "$setup_type" == "personal" ]]; then
-    brew install --cask rectangle raycast discord slack spotify
-    #TODO: make sure to intall alacritty this way: brew install --cask alacritty --no-quarantine
-  elif [[ "$setup_type" == "work" ]]; then
-    brew install --cask zoom microsoft-teams docker iterm2
-  fi
-}
-
-# 🟢 Install Programming Languages
 install_languages() {
-  echo "🛠 Installing programming languages..."
+  echo -e "\n🛠 Installing programming languages..."
   brew install python node rust go
 }
 
-# 🟢 Apply macOS Defaults
 set_macos_defaults() {
-  echo "🛠 Configuring macOS system preferences..."
-  # TODO: turn off monitor control keyboard shortcuts
+  echo -e "\n🛠 Configuring macOS system preferences..."
   defaults write NSGlobalDomain NSWindowResizeTime -float 0.1
   defaults write NSGlobalDomain AppleShowAllExtensions -bool true
   defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
   defaults write NSGlobalDomain KeyRepeat -int 1
   defaults write NSGlobalDomain InitialKeyRepeat -int 15
   defaults write com.apple.finder AppleShowAllFiles -bool true
-  killall Finder
-  echo "✅ macOS preferences configured!"
+  killall Finder || true
+  echo "✅ macOS preferences configured."
 }
 
-# 🟢 Run All Setup Steps
+# Main setup runner
 main() {
-  echo "🚀 Starting full system setup..."
+  echo -e "\n🚀 Starting full system setup..."
   choose_setup_type
-  confirm_step "Detect OS and install system packages?" && detect_os
-  confirm_step "Install Nerd Fonts?" && install_nerd_fonts
-  confirm_step "Install extra apps?" && install_extra_apps
-  confirm_step "Install programming languages?" && install_languages
-  confirm_step "Set macOS defaults?" && set_macos_defaults
-  confirm_step "Apply chezmoi dotfiles?" && setup_chezmoi
-  confirm_step "Add dotfiles to chezmoi?" && add_dotfiles_to_chezmoi
-  echo "✅ Setup complete! Restart your terminal."
+  confirm_step "Detect OS and install system packages?" && run_with_spinner detect_os
+  confirm_step "Install Nerd Fonts?" && run_with_spinner install_nerd_fonts
+  confirm_step "Install manual GUI apps?" && run_with_spinner install_manual_apps
+  confirm_step "Install programming languages?" && run_with_spinner install_languages
+  confirm_step "Set macOS defaults?" && run_with_spinner set_macos_defaults
+  confirm_step "Apply chezmoi dotfiles?" && run_with_spinner setup_chezmoi
+  confirm_step "Add local dotfiles to chezmoi?" && run_with_spinner add_dotfiles_to_chezmoi
+  confirm_step "Set up Git config?" && run_with_spinner setup_git_config
+  confirm_step "Set up SSH keys?" && run_with_spinner setup_ssh
+  echo -e "\n✅ Setup complete! Restart your terminal."
 }
 
-# Start the script
 main
