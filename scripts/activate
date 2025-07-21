@@ -14,19 +14,72 @@
 # Outputs:
 #   Activates virtual environment or creates a new one.
 #######################################
-activate_venv() {
-  if [ -f ".venv/bin/activate" ]; then
+
+# Find Python executable
+find_python() {
+    # Try python3 first, then python
+    if command_exists python3; then
+        echo "python3"
+    elif command_exists python; then
+        echo "python"
+    else
+        error_exit "No Python installation found. Please install Python 3.x"
+    fi
+}
+
+# Create virtual environment
+create_venv() {
+    local python_cmd=$(find_python)
+    echo -e "${YELLOW}Creating new virtual environment...${NC}"
+    
+    if $python_cmd -m venv .venv; then
+        echo -e "${GREEN}Virtual environment created successfully!${NC}"
+        source .venv/bin/activate
+        echo -e "${GREEN}Virtual environment activated.${NC}"
+        
+        # Upgrade pip if needed
+        if command_exists pip; then
+            echo -e "${YELLOW}Upgrading pip...${NC}"
+            pip install --upgrade pip >/dev/null 2>&1
+        fi
+    else
+        error_exit "Failed to create virtual environment"
+    fi
+}
+
+# Activate existing virtual environment
+activate_existing_venv() {
+    echo -e "${GREEN}Activating existing virtual environment...${NC}"
     source .venv/bin/activate
-    echo "Activated existing virtual environment."
-  else
-    echo "No virtual environment found. Creating a new one..."
-    python -m venv .venv && source .venv/bin/activate
-  fi
+    
+    # Check if activation was successful
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo -e "${GREEN}Virtual environment activated: $VIRTUAL_ENV${NC}"
+    else
+        error_exit "Failed to activate virtual environment"
+    fi
+}
+
+# Main activation function
+activate_venv() {
+    # Check if we're already in a virtual environment
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo -e "${YELLOW}Already in virtual environment: $VIRTUAL_ENV${NC}"
+        return 0
+    fi
+    
+    # Check for existing virtual environment
+    if [ -f ".venv/bin/activate" ]; then
+        activate_existing_venv
+    else
+        echo -e "${YELLOW}No virtual environment found.${NC}"
+        create_venv
+    fi
 }
 
 # Call the main function
 main() {
-  activate_venv
+    activate_venv
 }
 
 # Execute main with arguments passed to script
