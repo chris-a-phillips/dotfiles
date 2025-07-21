@@ -3,7 +3,6 @@
 # Switch git branches through mini cli
 . _utils
 
-
 #######################################
 # Switch git branches through mini cli
 # Arguments:
@@ -12,36 +11,168 @@
 #   None
 #######################################
 
-main() {
-    echo "${BBLUE}Current local branches"
-    echo "$(git branch --format='%1B[1;33m%(refname:short)%1B[m  - %(contents:subject) %1B[0;32m(%(committerdate:relative)) %(authorname)%1B[m' --sort=-committerdate)"
-    echo "${BBLUE}============================================================================${NC}"
-
-
-    PS3="Select branch to switch to: "
-
-
-    eval "$(git for-each-ref --shell --format='branches+=(%(refname:short))' refs/heads/)"
-    echo "Git checkout options:"
-    select branch in ${branches[@]}
-        do
-            # stop script if user types 'q'
-            if [[ "$REPLY" == 'q' ]]; then break; fi
-
-            # retry if option was not valid
-            if [[ "$branch" == "" ]]
-            then
-                echo "${RED}invalid option${YELLOW} $REPLY${NC}"
-                continue
-            fi
-
-            # now we can use the selected branch
-            echo "${GREEN}Switching to branch${YELLOW} $branch${NC}"
-            git checkout $branch
-
-            # break out of loop
-            break
-        done
+# Check if we're in a git repository
+check_git_repo() {
+    if ! is_git_repo; then
+        error_exit "Not in a git repository"
+    fi
 }
 
+# Get commit info for a branch with color formatting
+get_commit_info() {
+    local branch="$1"
+    # Get the commit info using git log
+    local full_info=$(git log --oneline -1 "$branch" --format="%s (%cr) %an" 2>/dev/null)
+    
+    # Split the info into parts for coloring
+    local subject=$(echo "$full_info" | sed 's/ (.*) .*$//')
+    local date_author=$(echo "$full_info" | sed 's/^.* (/(/')
+    
+    # Return with color formatting
+    echo "${BLUE}$subject${NC} ${GREEN}$date_author${NC}"
+}
+
+# Interactive branch selection with arrow keys
+interactive_branch_selection() {
+    local branches=($(git branch --format='%(refname:short)' --sort=-committerdate))
+    local current_branch=$(get_current_branch)
+    local selected=0
+    local total=${#branches[@]}
+    
+    # Hide cursor
+    tput civis
+    
+    # Function to display menu
+    display_menu() {
+        # Clear the menu area
+        for ((i=0; i<$((total + 3)); i++)); do
+            echo -ne "\033[K"  # Clear line
+            tput cuu1
+        done
+        
+        echo -e "${BBLUE}Select branch to switch to:${NC}"
+        echo "Use ↑/↓ arrows, Enter to select, q to quit"
+        echo "=========================================="
+        
+        # Show branches with same formatting as git branch output
+        for i in "${!branches[@]}"; do
+            local branch="${branches[$i]}"
+            local commit_info=$(get_commit_info "$branch")
+            
+            if [ "$i" -eq "$selected" ]; then
+                echo -e "${GREEN}→ ${YELLOW}$branch${NC}  - $commit_info"
+            else
+                echo -e "  ${YELLOW}$branch${NC}  - $commit_info"
+            fi
+        done
+    }
+    
+    # Initial display
+    echo -e "${BBLUE}Select branch to switch to:${NC}"
+    echo "Use ↑/↓ arrows, Enter to select, q to quit"
+    echo "=========================================="
+    
+    # Show initial menu
+    for i in "${!branches[@]}"; do
+        local branch="${branches[$i]}"
+        local commit_info=$(get_commit_info "$branch")
+        
+        if [ "$i" -eq "$selected" ]; then
+            echo -e "${GREEN}→ ${YELLOW}$branch${NC}  - $commit_info"
+        else
+            echo -e "  ${YELLOW}$branch${NC}  - $commit_info"
+        fi
+    done
+    
+    # Main selection loop
+    while true; do
+        # Read key input
+        read -rsn1 key
+        
+        # Handle escape sequences
+        if [ "$key" = $'\x1b' ]; then
+            read -rsn2 key
+            case "$key" in
+                '[A') # Up arrow
+                    if [ $selected -gt 0 ]; then
+                        ((selected--))
+                        display_menu
+                    fi
+                    ;;
+                '[B') # Down arrow
+                    if [ $selected -lt $((total - 1)) ]; then
+                        ((selected++))
+                        display_menu
+                    fi
+                    ;;
+            esac
+        else
+            # Handle single character keys
+            case "$key" in
+                $'\x0d'|$'\x0a'|'') # Enter key (various forms)
+                    local selected_branch="${branches[$selected]}"
+                    tput cnorm
+                    echo ""
+                    if [ "$selected_branch" = "$current_branch" ]; then
+                        echo -e "${YELLOW}Already on branch: $selected_branch${NC}"
+                    else
+                        echo -e "${GREEN}Switching to branch: ${YELLOW}$selected_branch${NC}"
+                        git checkout "$selected_branch"
+                    fi
+                    return 0
+                    ;;
+                q|Q) # Quit
+                    tput cnorm
+                    echo ""
+                    echo -e "${YELLOW}Exiting...${NC}"
+                    return 0
+                    ;;
+            esac
+        fi
+    done
+}
+
+# Main function
+main() {
+    # Check if we're in a git repository
+    check_git_repo
+    
+    # Check if terminal supports interactive features
+    if [ -t 0 ] && [ -t 1 ]; then
+        # Use interactive selection
+        interactive_branch_selection
+    else
+        # Fallback to original select method
+        echo -e "${BBLUE}Current local branches:${NC}"
+        echo "$(git branch --format='%1B[1;33m%(refname:short)%1B[m  - %(contents:subject) %1B[0;32m(%(committerdate:relative)) %(authorname)%1B[m' --sort=-committerdate)"
+        echo -e "${BBLUE}============================================================================${NC}"
+        
+        PS3="Select branch to switch to: "
+        eval "$(git for-each-ref --shell --format='branches+=(%(refname:short))' refs/heads/)"
+        echo "Git checkout options:"
+        
+        select branch in "${branches[@]}"; do
+            if [[ "$REPLY" == 'q' || "$REPLY" == 'Q' ]]; then
+                echo -e "${YELLOW}Exiting...${NC}"
+                break
+            fi
+            
+            if [[ -z "$branch" ]]; then
+                echo -e "${RED}Invalid option: $REPLY${NC}"
+                continue
+            fi
+            
+            local current_branch=$(get_current_branch)
+            if [ "$branch" = "$current_branch" ]; then
+                echo -e "${YELLOW}Already on branch: $branch${NC}"
+            else
+                echo -e "${GREEN}Switching to branch: ${YELLOW}$branch${NC}"
+                git checkout "$branch"
+            fi
+            break
+        done
+    fi
+}
+
+# Execute main function
 main
