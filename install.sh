@@ -161,26 +161,95 @@ setup_ssh() {
   echo "📋 Copy this to GitHub: https://github.com/settings/ssh/new"
 }
 
-# Dotfiles + Neovim
-setup_chezmoi() {
-  echo -e "\n💾 Applying chezmoi dotfiles..."
-  if [ ! -d "$HOME/.local/share/chezmoi" ]; then
-    chezmoi init --apply git@github.com:yourusername/dotfiles.git
-  else
-    chezmoi apply
+# Dotfiles Setup
+setup_dotfiles() {
+  echo -e "\n💾 Setting up dotfiles symlinks..."
+  
+  # Backup existing dotfiles if they exist and aren't already symlinks
+  backup_dotfile() {
+    local file="$1"
+    if [[ -f "$file" && ! -L "$file" ]]; then
+      echo "📦 Backing up existing $file to ${file}.backup"
+      mv "$file" "${file}.backup"
+    fi
+  }
+  
+  # Create symlinks for core dotfiles
+  backup_dotfile ~/.zshrc
+  backup_dotfile ~/.gitconfig
+  backup_dotfile ~/.aliases
+  backup_dotfile ~/.p10k.zsh
+  backup_dotfile ~/.tmux.conf
+  
+  ln -sf ~/.dotfiles/.zshrc ~/.zshrc
+  ln -sf ~/.dotfiles/.gitconfig ~/.gitconfig
+  ln -sf ~/.dotfiles/.aliases ~/.aliases
+  ln -sf ~/.dotfiles/.p10k.zsh ~/.p10k.zsh
+  
+  # Create config directories and symlinks
+  mkdir -p ~/.config
+  mkdir -p ~/.config/alacritty
+  mkdir -p ~/.config/tmux
+  
+  # Handle alacritty config (TOML format)
+  if [[ -f ~/.dotfiles/alacritty/alacritty.toml ]]; then
+    ln -sf ~/.dotfiles/alacritty/alacritty.toml ~/.config/alacritty/alacritty.toml
   fi
+  
+  # Handle tmux config and related files
+  ln -sf ~/.dotfiles/tmux/tmux.conf ~/.tmux.conf
+  ln -sf ~/.dotfiles/tmux/statusline.conf ~/.config/tmux/statusline.conf
+  ln -sf ~/.dotfiles/tmux/utility.conf ~/.config/tmux/utility.conf
+  ln -sf ~/.dotfiles/tmux/macos.conf ~/.config/tmux/macos.conf
+  
+  # Add custom scripts to PATH
+  mkdir -p ~/bin
+  if [ -d ~/.dotfiles/scripts ]; then
+    # Remove existing scripts to avoid conflicts
+    rm -rf ~/bin/* 2>/dev/null || true
+    cp -r ~/.dotfiles/scripts/* ~/bin/
+    chmod +x ~/bin/*
+    echo "✅ Scripts copied to ~/bin and made executable"
+  else
+    echo "⚠️ No scripts directory found"
+  fi
+  
+  echo "✅ Dotfiles symlinks created."
 }
 
-add_dotfiles_to_chezmoi() {
-  echo -e "\n🛠 Ensuring all dotfiles are added to chezmoi..."
-  FILES_TO_ADD=(
-    "$HOME/.tmux.conf" "$HOME/.zshrc" "$HOME/.gitconfig"
-    "$HOME/.config/alacritty/alacritty.yml" "$HOME/.config/nvim"
-  )
-  for file in "${FILES_TO_ADD[@]}"; do
-    [ -e "$file" ] && chezmoi add "$file" || echo "⚠️ Skipping $file"
-  done
-  chezmoi apply
+install_additional_tools() {
+  echo -e "\n🛠 Installing additional development tools..."
+  
+  # Install Neovim and LazyVim
+  if command -v nvim &>/dev/null; then
+    echo "📦 Installing LazyVim..."
+    if [ ! -d ~/.config/nvim ]; then
+      git clone https://github.com/LazyVim/starter ~/.config/nvim
+      rm -rf ~/.config/nvim/.git 2>/dev/null || true
+    else
+      echo "⚠️ Neovim config already exists"
+    fi
+  else
+    echo "⚠️ Neovim not found, install with: brew install neovim"
+  fi
+  
+  # Install Powerlevel10k theme
+  if [ ! -d ~/powerlevel10k ]; then
+    echo "📦 Installing Powerlevel10k theme..."
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k
+  else
+    echo "⚠️ Powerlevel10k already installed"
+  fi
+  
+  # Install Tmux Plugin Manager (TPM)
+  if [ ! -d ~/.tmux/plugins/tpm ]; then
+    echo "📦 Installing Tmux Plugin Manager..."
+    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+  else
+    echo "⚠️ TPM already installed"
+  fi
+  
+  echo "✅ Additional tools installed."
 }
 
 install_languages() {
@@ -209,11 +278,64 @@ main() {
   confirm_step "Install manual GUI apps?" && run_with_spinner install_manual_apps
   confirm_step "Install programming languages?" && run_with_spinner install_languages
   confirm_step "Set macOS defaults?" && run_with_spinner set_macos_defaults
-  confirm_step "Apply chezmoi dotfiles?" && run_with_spinner setup_chezmoi
-  confirm_step "Add local dotfiles to chezmoi?" && run_with_spinner add_dotfiles_to_chezmoi
+  confirm_step "Set up dotfiles symlinks?" && run_with_spinner setup_dotfiles
+  confirm_step "Install additional development tools?" && run_with_spinner install_additional_tools
   confirm_step "Set up Git config?" && run_with_spinner setup_git_config
   confirm_step "Set up SSH keys?" && run_with_spinner setup_ssh
-  echo -e "\n✅ Setup complete! Restart your terminal."
+  
+  # Final verification
+  echo -e "\n🔍 Final verification..."
+  
+  # Check symlinks
+  echo "Checking symlinks..."
+  local symlink_errors=0
+  for file in ~/.zshrc ~/.gitconfig ~/.tmux.conf ~/.config/alacritty/alacritty.toml; do
+    if [[ -L "$file" ]]; then
+      echo "✅ $(basename "$file") symlink exists"
+    else
+      echo "❌ $(basename "$file") symlink missing"
+      ((symlink_errors++))
+    fi
+  done
+  
+  # Check scripts
+  echo "Checking scripts..."
+  local script_errors=0
+  for script in activate gsw gbnew help mkcd backup pull-all; do
+    if command -v "$script" &>/dev/null; then
+      echo "✅ $script available"
+    else
+      echo "❌ $script not found"
+      ((script_errors++))
+    fi
+  done
+  
+  # Check tmux plugins
+  echo "Checking tmux plugins..."
+  if [[ -d ~/.tmux/plugins/tpm ]]; then
+    echo "✅ TPM installed"
+  else
+    echo "❌ TPM missing"
+    ((script_errors++))
+  fi
+  
+  # Check Homebrew packages
+  echo "Checking Homebrew packages..."
+  local package_count=$(brew list | wc -l)
+  echo "📦 $package_count packages installed"
+  
+  # Summary
+  if [[ $symlink_errors -eq 0 && $script_errors -eq 0 ]]; then
+    echo -e "\n🎉 All checks passed! Setup is complete."
+  else
+    echo -e "\n⚠️ Some issues found. Please check the errors above."
+  fi
+  
+  echo -e "\n💡 Next steps:"
+  echo "  1. Restart your terminal"
+  echo "  2. Run 'help' to see available commands"
+  echo "  3. Run 'tmux' to test tmux configuration"
+  echo "  4. Run 'nvim' to test Neovim setup"
 }
 
 main
