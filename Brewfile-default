@@ -1,0 +1,50 @@
+tap "homebrew/bundle"
+tap "homebrew/cask-fonts"
+tap "homebrew/services"
+# Clone of cat(1) with syntax highlighting and Git integration
+brew "bat"
+# Core application library for C
+brew "glib"
+# Interpreted, interactive, object-oriented programming language
+brew "python@3.12"
+# Modern replacement for 'ls'
+brew "exa"
+# Command-line fuzzy finder written in Go
+brew "fzf"
+# Distributed revision control system
+brew "git"
+# Syntax-highlighting pager for git and diff output
+brew "git-delta"
+# Portable Foreign Function Interface library
+brew "libffi"
+# Platform built on V8 to build network applications
+brew "node"
+# Interactive cheatsheet tool for the command-line
+brew "navi"
+# Ambitious Vim-fork focused on extensibility and agility
+brew "neovim"
+# Interpreted, interactive, object-oriented programming language
+brew "python@3.10"
+# Manage multiple Node.js versions
+brew "nvm"
+# Framework for layout and rendering of i18n text
+brew "pango"
+# Python version management
+brew "pyenv"
+# Interpreted, interactive, object-oriented programming language
+brew "python@3.11"
+# Search tool like grep and The Silver Searcher
+brew "ripgrep"
+# Simplified and community-driven man pages
+brew "tldr"
+# Terminal multiplexer
+brew "tmux"
+# Display directories as trees (with optional color/HTML output)
+brew "tree"
+# Enable Windows-like alt-tab
+cask "alt-tab"
+cask "font-hack-nerd-font"
+# Utility to hide menu bar items
+cask "hiddenbar"
+# Menu bar calendar
+cask "itsycal" 

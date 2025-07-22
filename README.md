@@ -1,281 +1,263 @@
-# ✨ Dotfiles Setup & Installation Guide
+# Dotfiles
 
-A complete **automated setup** for a new **macOS** environment using **Homebrew**, **tmux**, **Neovim**, **Alacritty**, and more.
+A comprehensive dotfiles setup with multiple configuration options for different use cases.
 
----
+## 🚀 Quick Start
 
-## 📌 Steps to Bootstrap a New Mac
-
-Follow these steps to fully set up your laptop from scratch.
-
-### ==1⃣ Install Apple's Command Line Tools
-
-Install this first so you can use Git and Homebrew:
-
-```zsh
-xcode-select --install
+### One-Liner Installation
+```bash
+# Install with one command
+curl -fsSL https://raw.githubusercontent.com/chris-a-phillips/dotfiles/main/quick-setup.sh | bash
 ```
 
----
-
-### ==2⃣ Clone the Dotfiles Repo
-
-```zsh
-# If using SSH:
-git clone git@github.com:chris-a-phillips/dotfiles.git ~/.dotfiles
-
-# Or use HTTPS:
+### Manual Installation
+```bash
+# Clone the repository
 git clone https://github.com/chris-a-phillips/dotfiles.git ~/.dotfiles
+cd ~/.dotfiles
+
+# Run the installer
+./install.sh
 ```
 
----
+## 📋 Features
 
-### ==3⃣ Run the Install Script
+### 🎯 Three Configuration Types
 
-```zsh
-bash ~/.dotfiles/install.sh
+1. **Personal** - Minimal setup for personal development
+   - Core development tools
+   - Essential productivity apps
+   - Essential development tools
+   - No cloud tools or extensive fonts
+
+2. **Work** - Comprehensive setup with cloud tools
+   - All personal features plus:
+   - AWS CLI and SAM
+   - Docker and Kubernetes tools
+   - Extensive Nerd Font collection
+   - Remote development tools
+   - Unity development tools
+
+3. **Default** - Basic setup with essential tools
+   - Minimal core tools
+   - Basic development environment
+   - Essential development tools
+   - No advanced features
+
+### 🛠 What Gets Installed
+
+#### Core Tools
+- **Terminal**: tmux, fzf, exa, bat, ripgrep
+- **Development**: git, neovim, node, python, rust, go
+- **Package Managers**: Homebrew, pip, npm, cargo
+- **Version Managers**: pyenv, nvm, asdf
+
+#### Productivity Apps
+- **Window Management**: alt-tab, rectangle-pro
+- **Menu Bar**: hiddenbar, itsycal
+- **Terminal**: alacritty, iTerm2
+- **Development**: VS Code, Postman, DB Browser
+
+#### Development Tools
+- **Git**: git-delta, lazygit, git-lfs
+- **Cloud**: AWS CLI, Docker, Kubernetes, Terraform
+- **Databases**: PostgreSQL, MongoDB, MySQL, Redis
+- **Languages**: Python, Node.js, Rust, Go, C#
+
+#### Development Tools
+- **Git**: git-delta, lazygit, git-lfs
+- **Cloud**: AWS CLI, Docker, Kubernetes, Terraform
+- **Databases**: PostgreSQL, MongoDB, MySQL, Redis
+- **Languages**: Python, Node.js, Rust, Go, C#
+
+## 🎛 Configuration System
+
+### JSON-Based Configuration
+
+Each configuration is defined in a JSON file under `configs/`:
+
+```json
+{
+  "name": "Personal",
+  "description": "Minimal setup for personal development",
+  "brewfile": "Brewfile-personal",
+  "features": {
+    "core_tools": true,
+    "development": true,
+    "cloud_tools": false,
+    "extensive_fonts": false
+  },
+  "packages": {
+    "additional_brews": ["package1", "package2"],
+    "additional_casks": ["app1", "app2"],
+    "additional_casks": ["app1", "app2"]
+  }
+}
 ```
 
-**This will:**
+### Configuration Manager
 
-* Install **Homebrew** (if missing)
-* Install **CLI tools, GUI apps, fonts** from Brewfile
-* Install **Nerd Fonts** from `fonts.txt`
-* Restore **Raycast** and **Rectangle Pro** settings
-* Set up **Git configuration** and **SSH keys**
-* Apply **macOS system preferences**
-* Create **symlinks** for all dotfiles
-* Copy **custom scripts** to `~/bin` and make them executable
-* Install **Neovim/LazyVim** and **Powerlevel10k** theme
+Use the configuration manager to manage your setups:
 
----
+```bash
+# List all configurations
+./scripts/config-manager list
 
-### ==4⃣ Set Up Dotfiles (Automatic)
+# Show details of a configuration
+./scripts/config-manager show personal
 
-The install script now automatically handles all dotfile setup:
+# Create a new configuration
+./scripts/config-manager create gaming
 
-```zsh
-# The script will:
-# ✅ Backup existing dotfiles (if any)
-# ✅ Create all necessary symlinks
-# ✅ Set up config directories
-# ✅ Copy and make scripts executable
-# ✅ Install TPM for tmux plugins
+# Compare two configurations
+./scripts/config-manager compare personal work
+
+# Validate a configuration
+./scripts/config-manager validate work
 ```
 
-**What gets set up:**
-- Core dotfiles: `.zshrc`, `.gitconfig`, `.aliases`, `.p10k.zsh`
-- Config files: `~/.config/alacritty/alacritty.toml`, `~/.tmux.conf`
-- Tmux plugins: TPM installation and configuration
-- Custom scripts: Copied to `~/bin` and made executable
+## 📁 Project Structure
 
-**Safety features:**
-- ✅ Existing dotfiles are backed up to `.backup` files
-- ✅ Comprehensive verification at the end
-- ✅ Error handling for missing dependencies
-
----
-
-### ==5⃣ Verify Setup
-
-The install script includes comprehensive verification, but you can also check manually:
-
-```zsh
-# Check if symlinks are working
-ls -la ~/.zshrc ~/.gitconfig ~/.tmux.conf ~/.config/alacritty/alacritty.toml
-
-# Check if scripts are available
-which activate gsw gbnew help mkcd backup pull-all
-
-# Check tmux plugins
-ls -la ~/.tmux/plugins/tpm
-
-# Check installed packages
-brew list
+```
+.dotfiles/
+├── install.sh                 # Main installer script
+├── configs/                   # Configuration files
+│   ├── personal.json         # Personal configuration
+│   ├── work.json            # Work configuration
+│   └── default.json         # Default configuration
+├── Brewfile-personal         # Personal Brewfile
+├── Brewfile-work            # Work Brewfile
+├── Brewfile-default         # Default Brewfile
+├── scripts/                 # Utility scripts
+│   ├── config-manager       # Configuration management
+│   ├── activate             # Activate environment
+│   ├── backup              # Backup current setup
+│   └── ...                 # Other utilities
+├── tmux/                   # Tmux configuration
+├── alacritty/              # Alacritty configuration
+├── app_configs/            # App-specific configs
+└── ...                     # Other config files
 ```
 
----
+## 🔧 Installation Process
 
-### ==6⃣ Install Additional Tools
+The installer performs the following steps:
 
-```zsh
-# Install Neovim and LazyVim
-brew install neovim
-git clone https://github.com/LazyVim/starter ~/.config/nvim
-rm -rf ~/.config/nvim/.git
+1. **Configuration Selection** - Choose your setup type
+2. **OS Detection** - Automatically detect macOS/Linux
+3. **Package Installation** - Install Homebrew and packages
+4. **Font Installation** - Install Nerd Fonts
+5. **App Configuration** - Restore app settings
+6. **Dotfiles Setup** - Create symlinks and copy scripts
+7. **Development Tools** - Install additional tools
+8. **Git & SSH Setup** - Configure version control
+9. **macOS Defaults** - Configure system preferences
+10. **Verification** - Verify installation success
 
-# Install Powerlevel10k theme
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k
+## 🎨 Customization
 
-# Install Oh My Zsh (optional)
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-```
+### Creating Custom Configurations
 
----
+1. Create a new configuration:
+   ```bash
+   ./scripts/config-manager create myconfig
+   ```
 
-### ==7⃣ Verify Scripts Are Working
+2. Edit the configuration file:
+   ```bash
+   vim configs/myconfig.json
+   ```
 
-After setup, you should have access to these custom scripts:
+3. Create a corresponding Brewfile:
+   ```bash
+   cp Brewfile-default Brewfile-myconfig
+   vim Brewfile-myconfig
+   ```
 
-```zsh
-# Check if scripts are available
-which activate gsw gbnew help mkcd backup pull-all
+4. Install with your custom configuration:
+   ```bash
+   ./install.sh
+   # Choose option 4 (Custom) and enter "myconfig"
+   ```
 
-# Test a script
-gsw  # Git branch switcher
-help # Show available commands
-```
+### Adding Packages
 
-**Available Scripts:**
-- `activate` - Activate Python virtual environment
-- `gsw` - Git branch switcher with interactive menu
-- `gbnew` - Create and switch to new git branch
+To add packages to a configuration:
+
+1. **Brew packages**: Add to the corresponding Brewfile
+2. **Additional packages**: Add to the `additional_brews` array in the JSON config
+3. **Cask apps**: Add to the `additional_casks` array
+4. **Cask apps**: Add to the `additional_casks` array
+
+## 🚀 Available Scripts
+
+After installation, these scripts are available in your `~/bin`:
+
+- `activate` - Activate the development environment
+- `backup` - Backup current dotfiles
+- `gsw` - Git switch with fuzzy finder
+- `gbnew` - Create new git branch
 - `help` - Show available commands
-- `mkcd` - Create directory and navigate to it
-- `backup` - Backup utility
+- `mkcd` - Make directory and cd into it
 - `pull-all` - Pull all git repositories
+- `config-manager` - Manage configurations
 
----
+## 🔍 Troubleshooting
 
-# 📂 Tooling Overview
+### Common Issues
 
-### 🟢 Homebrew
-
-Homebrew handles all system dependencies.
-
-```zsh
-brew update && brew upgrade
-brew bundle --file ~/.dotfiles/Brewfile
-```
-
----
-
-### 🟢 Neovim (LazyVim)
-
-* Config lives in `~/.config/nvim`
-* Uses LazyVim
-
-```zsh
-brew install neovim
-nvim +Lazy update +qall
-```
-
----
-
-### 🟢 Tmux
-
-```zsh
-brew install tmux
-tmux new -s mysession
-tmux attach -t mysession
-tmux kill-session -t mysession
-```
-
----
-
-### 🟢 Alacritty
-
-```zsh
-brew install alacritty
-```
-
-Config: `~/.config/alacritty/alacritty.yml`
-
----
-
-### 🟢 Fonts (Nerd Fonts)
-
-```zsh
-brew install --cask font-jetbrains-mono-nerd-font
-brew install --cask font-fira-code-nerd-font
-```
-
-Or use:
-
-```zsh
-bash ~/.dotfiles/install.sh  # auto-installs from fonts.txt
-```
-
----
-
-### 🟢 Custom Scripts
-
-Your custom scripts are automatically copied to `~/bin` and added to your PATH:
-
-```zsh
-# Scripts are available from anywhere
-gsw     # Git branch switcher
-activate # Python venv activator
-help     # Show available commands
-```
-
-**PATH Setup:**
-- `~/bin` - Custom scripts (copied from `~/.dotfiles/scripts/`)
-- `~/.dotfiles/scripts` - Original script location (also in PATH)
-
----
-
-# 🔥 TL;DR
-
-```zsh
-xcode-select --install
-git clone git@github.com:chris-a-phillips/dotfiles.git ~/.dotfiles
-bash ~/.dotfiles/install.sh
-# Then manually create symlinks as shown in step 4
-```
-
-**Boom. Full setup in a few commands.** 🚀
-
----
-
-# 🔧 Manual Setup (Alternative)
-
-If you prefer to set up manually instead of using the install script:
-
-1. **Install Homebrew:**
-   ```zsh
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+1. **Permission Denied**: Make sure scripts are executable
+   ```bash
+   chmod +x scripts/*
    ```
 
-2. **Install packages:**
-   ```zsh
-   brew bundle --file ~/.dotfiles/Brewfile
+2. **Brewfile Not Found**: Check that the Brewfile exists
+   ```bash
+   ls -la Brewfile-*
    ```
 
-3. **Create symlinks:**
-   ```zsh
-   # Backup existing files first
-   for file in ~/.zshrc ~/.gitconfig ~/.aliases ~/.p10k.zsh ~/.tmux.conf; do
-     [[ -f "$file" && ! -L "$file" ]] && mv "$file" "${file}.backup"
-   done
-   
-   # Core dotfiles
-   ln -sf ~/.dotfiles/.zshrc ~/.zshrc
-   ln -sf ~/.dotfiles/.gitconfig ~/.gitconfig
-   ln -sf ~/.dotfiles/.aliases ~/.aliases
-   ln -sf ~/.dotfiles/.p10k.zsh ~/.p10k.zsh
-   
-   # Config directories
-   mkdir -p ~/.config/alacritty ~/.config/tmux
-   ln -sf ~/.dotfiles/alacritty/alacritty.toml ~/.config/alacritty/alacritty.toml
-   ln -sf ~/.dotfiles/tmux/tmux.conf ~/.tmux.conf
-   ln -sf ~/.dotfiles/tmux/statusline.conf ~/.config/tmux/statusline.conf
-   ln -sf ~/.dotfiles/tmux/utility.conf ~/.config/tmux/utility.conf
-   ln -sf ~/.dotfiles/tmux/macos.conf ~/.config/tmux/macos.conf
-   
-   # Set up custom scripts
-   mkdir -p ~/bin
-   rm -rf ~/bin/* 2>/dev/null || true
-   cp -r ~/.dotfiles/scripts/* ~/bin/
-   chmod +x ~/bin/*
-   
-   # Install TPM
-   git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+3. **Configuration Errors**: Validate your configuration
+   ```bash
+   ./scripts/config-manager validate personal
    ```
 
-4. **Set up Git and SSH:**
-   ```zsh
-   git config --global user.name "Your Name"
-   git config --global user.email "your.email@example.com"
-   ssh-keygen -t ed25519 -C "your.email@example.com"
+4. **Symlink Issues**: Check if files are already symlinks
+   ```bash
+   ls -la ~/.zshrc ~/.gitconfig ~/.tmux.conf
    ```
+
+### Verification
+
+After installation, verify everything works:
+
+```bash
+# Check symlinks
+ls -la ~/.zshrc ~/.gitconfig ~/.tmux.conf
+
+# Test scripts
+help
+tmux
+nvim
+
+# Check packages
+brew list | wc -l
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test with different configurations
+5. Submit a pull request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Homebrew](https://brew.sh/) for package management
+- [LazyVim](https://www.lazyvim.org/) for Neovim configuration
+- [Powerlevel10k](https://github.com/romkatv/powerlevel10k) for terminal theme
+- [Nerd Fonts](https://www.nerdfonts.com/) for programming fonts

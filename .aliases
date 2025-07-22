@@ -25,6 +25,19 @@ alias cp="cp -i"                                  # Interactive file copying
 alias mv="mv -i"                                  # Interactive file moving
 alias fzf="fzf --preview 'bat --style=numbers --color=always --line-range :500 {}'"  # Fuzzy finder with preview using bat
 
+# Process Management
+alias psg="ps aux | grep"                          # Search for processes
+alias mem="top -l 1 | head -n 10"                  # Show memory usage
+alias cpu="top -l 1 | grep 'CPU usage'"            # Show CPU usage
+alias ports="lsof -i -P -n | grep LISTEN"          # Show listening ports
+alias killport="lsof -ti:8080 | xargs kill -9"     # Kill process on port (customize port)
+
+# Enhanced Listing
+alias ll="ls -la"                                   # Long listing with hidden files
+alias lt="ls -lt"                                   # List by time
+alias lsize="ls -lahS"                              # List by size
+alias tree="tree -C -L"                              # Colored tree view with depth level (usage: tree 2)
+
 # Personal Helpful Commands
 alias als="bat ~/.dotfiles/.aliases"              # View personal aliases file
 alias fns="ls ~/bin"                              # List files in the ~/bin directory
