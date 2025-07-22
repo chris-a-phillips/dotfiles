@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# Quick internet speed test
+. _utils
+
+#######################################
+# Quick internet speed test
+# Arguments:
+#   None
+# Outputs:
+#   Shows download/upload speeds
+#######################################
+
+main() {
+    echo -e "${YELLOW}Testing internet speed...${NC}"
+    
+    # Test download speed
+    echo -e "${CYAN}Download speed:${NC}"
+    curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python3 - --simple
+    
+    # Alternative using speedtest-cli if installed
+    if command_exists speedtest-cli; then
+        echo -e "${CYAN}Detailed speed test:${NC}"
+        speedtest-cli --simple
+    fi
+}
+
+main "$@" 
