@@ -86,10 +86,9 @@ alias ga="git add"                                   # Git add
 alias gb="git branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"  # Git branch with formatting
 alias gbr="git branch -r --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"  # Git remote branch with formatting
 alias gf="git fetch"                                 # Git fetch
-alias grd="git fetch origin && git rebase origin/master"  # Git rebase onto origin/master
+alias grd="git fetch origin && git rebase main"  # Git rebase onto main
 alias gpsh="git push -u 2>&1 | tee >(cat) | grep \"pull/new\" | awk '{print \$2}' | xargs open"  # Git push and open pull request
 alias gpll="git pull"                               # Git pull
-alias gcbranch="git branch | grep \* | cut -d ' ' -f2"  # Git current branch name
 
 # Git Log Aliases
 alias lg=lg1
