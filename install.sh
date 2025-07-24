@@ -16,34 +16,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIGS_DIR="$SCRIPT_DIR/configs"
 CONFIG_FILE=""
 SETUP_TYPE=""
-DRY_RUN=false
-
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    --dry-run)
-      DRY_RUN=true
-      shift
-      ;;
-    --help|-h)
-      echo "Usage: $0 [OPTIONS]"
-      echo ""
-      echo "Options:"
-      echo "  --dry-run    Show what would be installed without making changes"
-      echo "  --help, -h   Show this help message"
-      echo ""
-      echo "Examples:"
-      echo "  $0                    # Interactive installation"
-      echo "  $0 --dry-run         # Test run (no changes)"
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1"
-      echo "Use --help for usage information"
-      exit 1
-      ;;
-  esac
-done
 
 # Spinner for visual feedback
 spinner() {
@@ -535,7 +507,7 @@ verify_setup() {
   # Check scripts
   print_info "Checking scripts..."
   local script_errors=0
-  for script in activate gsw gbnew help mkcd backup pull-all; do
+  for script in activate gsw gbnew greset help mkcd backup pull-all; do
     if command -v "$script" &>/dev/null; then
       print_status "$script available"
     else
