@@ -43,3 +43,5 @@
 
 [safe]
 	directory = /workspaces
+[credential]
+	helper = osxkeychain
