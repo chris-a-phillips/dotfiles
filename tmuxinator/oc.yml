@@ -1,6 +1,6 @@
-# ~/.config/tmuxinator/oc.yml
+# ~/.config/tmuxinator/chain.yml
 
-name: oc
+name: chain
 root: ~
 
 windows:

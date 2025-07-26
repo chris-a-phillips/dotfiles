@@ -3,18 +3,58 @@
 # Create backup tar file of this directory
 . _utils
 
-
 #######################################
 # Create backup tar file of this directory
 # Arguments:
-#   None
+#   backup_name?: string (optional backup name)
 # Outputs:
-#   backup_file
+#   backup_file.tar.gz
 #######################################
 
-BACKUPFILE=backup-$(date +%m-%d-%Y)
-archive=${1:-$BACKUPFILE}
+# Create backup filename
+create_backup_name() {
+    local base_name="${1:-backup}"
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    echo "${base_name}_${timestamp}"
+}
 
-find . -mtime -1 -type f -print0 | xargs -0 tar rvf "$archive.tar"
-echo "Directory $PWD backed up in archive file \"$archive.tar.gz\"."
-exit 0
+# Check if tar is available
+check_tar() {
+    if ! command_exists tar; then
+        error_exit "tar command not found. Please install tar."
+    fi
+}
+
+# Create backup
+create_backup() {
+    local backup_name="$1"
+    local backup_file="${backup_name}.tar.gz"
+    
+    echo -e "${YELLOW}Creating backup: $backup_file${NC}"
+    
+    # Create tar archive with gzip compression
+    if tar -czf "$backup_file" --exclude='*.tar.gz' --exclude='.git' --exclude='node_modules' --exclude='__pycache__' .; then
+        local size=$(du -h "$backup_file" | cut -f1)
+        echo -e "${GREEN}Backup created successfully: $backup_file (${size})${NC}"
+        
+        # Show backup location
+        echo -e "${CYAN}Backup location: $(pwd)/$backup_file${NC}"
+    else
+        error_exit "Failed to create backup"
+    fi
+}
+
+# Main function
+main() {
+    # Check prerequisites
+    check_tar
+    
+    # Get backup name from argument or create default
+    local backup_name=$(create_backup_name "$1")
+    
+    # Create backup
+    create_backup "$backup_name"
+}
+
+# Execute main with arguments
+main "$@"

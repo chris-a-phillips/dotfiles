@@ -3,7 +3,6 @@
 # Help script to show docstrings
 . _utils
 
-
 #######################################
 # Help script to show docstrings
 # Arguments:
@@ -11,38 +10,106 @@
 # Outputs:
 #   Writes help information to terminal
 #######################################
-display_help() {
-    help=./help
-    echo `basename "$help"`': '
-    head -n 3 "$help" | tail -n 1
-    echo ""
 
-    for f in ./*; do
-        if [[ "$f" == "./help"
-            || "$f" == "./_bash_template"
-            || "$f" == "./_utils" ]]; then
-            continue
+# Get script description from file
+get_script_description() {
+    local file="$1"
+    if [ -f "$file" ] && [ -r "$file" ]; then
+        # Look for description in comments (lines starting with #)
+        local desc=$(grep -E '^#.*' "$file" | head -n 5 | grep -v '^#!/' | sed 's/^# //' | head -n 1)
+        if [ -n "$desc" ]; then
+            echo "$desc"
         else
-            echo `basename "$f"`': '
-            head -n 3 "$f" | tail -n 1
-            echo ""
+            echo "No description available"
         fi
-    done
-}
-
-display_help_full() {
-    echo "$1"
-    head -n 13 "$1" | tail -n 9
-    echo ""
-}
-
-
-main(){
-    if [[ "$1" == "" ]]; then
-        display_help
     else
-        display_help_full $1
+        echo "File not readable"
     fi
 }
 
-main $1
+# Display help for all scripts
+display_help() {
+    echo -e "${BBLUE}Available Scripts:${NC}"
+    echo "=================="
+    
+    # Get current directory name for display
+    local dir_name=$(basename "$PWD")
+    
+    # Find all executable files in current directory
+    local found_scripts=false
+    
+    for file in ./*; do
+        # Skip if not a file or not executable
+        if [ ! -f "$file" ] || [ ! -x "$file" ]; then
+            continue
+        fi
+        
+        # Skip utility files
+        local basename_file=$(basename "$file")
+        if [[ "$basename_file" == "_utils" || "$basename_file" == "_bash_template" ]]; then
+            continue
+        fi
+        
+        found_scripts=true
+        local desc=$(get_script_description "$file")
+        echo -e "${YELLOW}$basename_file${NC}: $desc"
+    done
+    
+    if [ "$found_scripts" = false ]; then
+        echo -e "${YELLOW}No executable scripts found in current directory${NC}"
+    fi
+    
+    echo ""
+    echo -e "${CYAN}Usage: help [script_name]${NC}"
+    echo -e "${CYAN}Example: help backup${NC}"
+}
+
+# Display detailed help for specific script
+display_help_full() {
+    local script_name="$1"
+    local script_path="./$script_name"
+    
+    if [ ! -f "$script_path" ]; then
+        error_exit "Script not found: $script_name"
+    fi
+    
+    if [ ! -x "$script_path" ]; then
+        echo -e "${YELLOW}Warning: $script_name is not executable${NC}"
+    fi
+    
+    echo -e "${BBLUE}Detailed help for: $script_name${NC}"
+    echo "================================"
+    
+    # Show script description
+    local desc=$(get_script_description "$script_path")
+    echo -e "${YELLOW}Description:${NC} $desc"
+    
+    # Show usage if available
+    local usage=$(grep -E '^# Usage:' "$script_path" | head -n 1 | sed 's/^# Usage: //')
+    if [ -n "$usage" ]; then
+        echo -e "${YELLOW}Usage:${NC} $usage"
+    fi
+    
+    # Show arguments if available
+    local args=$(grep -E '^# Arguments:' "$script_path" -A 5 | grep -E '^# ' | sed 's/^# //')
+    if [ -n "$args" ]; then
+        echo -e "${YELLOW}Arguments:${NC}"
+        echo "$args"
+    fi
+    
+    # Show first few lines of script for context
+    echo -e "${YELLOW}Script preview:${NC}"
+    head -n 20 "$script_path" | grep -E '^[^#]' | head -n 5
+}
+
+# Main function
+main() {
+    if [ -z "$1" ]; then
+        display_help
+    else
+        display_help_full "$1"
+    fi
+}
+
+# Execute main with arguments
+main "$@"

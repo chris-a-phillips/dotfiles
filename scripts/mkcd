@@ -3,7 +3,6 @@
 # Make folder and cd into it in one command
 . _utils
 
-
 #######################################
 # Make folder and cd into it in one command
 # Arguments:
@@ -12,9 +11,32 @@
 #   None
 #######################################
 
+# Create directory and change to it
 mkcd() {
-    mkdir -p "$1"
-    cd "$1"
+    local dir_name="$1"
+    
+    # Check if directory name is provided
+    if [ -z "$dir_name" ]; then
+        error_exit "Please provide a directory name"
+    fi
+    
+    # Create directory
+    if mkdir -p "$dir_name"; then
+        echo -e "${GREEN}Created directory: $dir_name${NC}"
+        
+        # Change to directory
+        if safe_cd "$dir_name"; then
+            echo -e "${GREEN}Changed to directory: $(pwd)${NC}"
+        fi
+    else
+        error_exit "Failed to create directory: $dir_name"
+    fi
 }
 
-mkcd $1
+# Main function
+main() {
+    mkcd "$1"
+}
+
+# Execute main with arguments
+main "$@"

@@ -3,7 +3,6 @@
 # Create new git branch
 . _utils
 
-
 #######################################
 # Create new git branch
 # Arguments:
@@ -13,39 +12,12 @@
 #######################################
 
 # Get current branch
-current="$(git branch | grep "*" | cut -b 3-)"
-
-# Get default branch (main, master, or whatever is configured)
-get_default_branch() {
-    # Try to get the default branch from git config
-    local default_branch=$(git config --get init.defaultBranch 2>/dev/null)
-    
-    # If not set, try to detect from remote
-    if [ -z "$default_branch" ]; then
-        default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-    fi
-    
-    # If still not found, check if main or master exists
-    if [ -z "$default_branch" ]; then
-        if git show-ref --verify --quiet refs/heads/main; then
-            default_branch="main"
-        elif git show-ref --verify --quiet refs/heads/master; then
-            default_branch="master"
-        else
-            # Fallback to current branch if no default found
-            default_branch="$current"
-        fi
-    fi
-    
-    echo "$default_branch"
-}
-
-# Get the default branch
-default_branch=$(get_default_branch)
+current="$(get_current_branch)"
 
 # Function to create branch from default
 create_from_default() {
     local branch_name="$1"
+    local default_branch=$(get_default_branch)
     echo -e "Creating ${YELLOW}$branch_name${NC} from ${RED}$default_branch${NC}..."
     git checkout "$default_branch" && git pull origin "$default_branch" && git checkout -b "$branch_name"
 }
@@ -60,6 +32,7 @@ create_from_current() {
 # Function to ask user for source branch
 ask_for_source() {
     local branch_name="$1"
+    local default_branch=$(get_default_branch)
     echo -e "Create ${YELLOW}$branch_name${NC} from ${BBLUE}$current (c)${NC} or from ${RED}$default_branch (d)${NC}?"
     read -p "current(c) / $default_branch(d) ?" choice
     case "$choice" in
@@ -76,7 +49,7 @@ if [ -z "${1}" ]; then
     read branch_name
     
     # If already on default branch, just create from current
-    if [ "$current" == "$default_branch" ]; then
+    if [ "$current" == "$(get_default_branch)" ]; then
         create_from_current "$branch_name"
     else
         # Ask user which branch to create from
@@ -87,7 +60,7 @@ else
     branch_name="$1"
     
     # If already on default branch, just create from current
-    if [ "$current" == "$default_branch" ]; then
+    if [ "$current" == "$(get_default_branch)" ]; then
         create_from_current "$branch_name"
     else
         # Ask user which branch to create from

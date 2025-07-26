@@ -1,0 +1,58 @@
+{
+  "name": "Personal",
+  "description": "Most extensive setup for personal development",
+  "brewfile": "Brewfile-personal",
+  "macos_defaults_file": "configs/macos_defaults.json",
+  "features": {
+    "core_tools": true,
+    "development": true,
+    "productivity": true,
+    "cloud_tools": false,
+    "extensive_fonts": true,
+    "remote_development": true,
+    "unity_development": true,
+    "gaming": true
+  },
+  "packages": {
+    "additional_brews": [
+      "cairo",
+      "chezmoi",
+      "figlet",
+      "gdk-pixbuf",
+      "harfbuzz",
+      "krb5",
+      "libevent",
+      "lolcat",
+      "openssl@1.1",
+      "pipenv",
+      "postgresql@14",
+      "rm-improved",
+      "squid",
+      "virtualenv"
+    ],
+    "additional_casks": [
+      "alt-tab",
+      "font-hack-nerd-font",
+      "hiddenbar",
+      "itsycal"
+    ]
+  },
+  "macos_defaults": {
+    "enable": true
+  },
+  "git_config": {
+    "enable": true,
+    "prompt_for_credentials": true
+  },
+  "ssh_setup": {
+    "enable": true,
+    "key_type": "ed25519",
+    "key_name": "personal"
+  },
+  "additional_tools": {
+    "lazygit": true,
+    "powerlevel10k": true,
+    "tmux_plugins": true,
+    "neovim_lazyvim": true
+  }
+} 
