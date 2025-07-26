@@ -179,11 +179,15 @@ install_nerd_fonts() {
   mkdir -p "$FONT_DIR"
   
   if [[ -f "$SCRIPT_DIR/fonts.txt" ]]; then
+    print_info "Installing fonts from fonts.txt..."
     while IFS= read -r font_url; do
-      font_name=$(basename "$font_url" .zip)
-      curl -fLo "$font_name.zip" "$font_url"
-      unzip -o "$font_name.zip" -d "$FONT_DIR"
-      rm "$font_name.zip"
+      if [[ -n "$font_url" && ! "$font_url" =~ ^[[:space:]]*# ]]; then
+        font_name=$(basename "$font_url" .zip)
+        print_info "Installing $font_name..."
+        curl -fLo "$font_name.zip" "$font_url"
+        unzip -o "$font_name.zip" -d "$FONT_DIR" 2>/dev/null || true
+        rm "$font_name.zip" 2>/dev/null || true
+      fi
     done < "$SCRIPT_DIR/fonts.txt"
     print_status "Fonts installed successfully."
   else
@@ -278,6 +282,94 @@ setup_ssh() {
 setup_dotfiles() {
   print_header "Dotfiles Setup"
   
+  # Create missing dotfiles if they don't exist
+  create_missing_dotfile() {
+    local source_file="$1"
+    local target_file="$2"
+    local content="$3"
+    
+    if [[ ! -f "$source_file" ]]; then
+      print_info "Creating missing dotfile: $(basename "$source_file")"
+      echo "$content" > "$source_file"
+    fi
+  }
+  
+  # Create basic .zshrc if missing
+  create_missing_dotfile "$SCRIPT_DIR/.zshrc" ~/.zshrc '#!/bin/zsh
+# Basic zsh configuration
+export PATH=$HOME/bin:/usr/local/bin:$PATH
+export PATH=/opt/homebrew/bin:$PATH
+export EDITOR=nvim
+
+# Load aliases if they exist
+if [ -f ~/.aliases ]; then
+    . ~/.aliases
+fi
+
+# History settings
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt HIST_IGNORE_DUPS
+setopt INC_APPEND_HISTORY
+setopt SHARE_HISTORY
+setopt HIST_REDUCE_BLANKS'
+
+  # Create basic .gitconfig if missing
+  create_missing_dotfile "$SCRIPT_DIR/.gitconfig" ~/.gitconfig '[init]
+	defaultBranch = main
+
+[core]
+	editor = nvim
+	pager = delta
+
+[user]
+	# Will be configured during setup
+
+[delta]
+	features = line-numbers decorations
+	syntax-theme = Dracula
+
+[merge]
+	conflictstyle = diff3
+
+[diff]
+	colorMoved = default
+
+[pager]
+	log = delta
+	show = delta
+	diff = delta'
+
+  # Create basic .aliases if missing
+  create_missing_dotfile "$SCRIPT_DIR/.aliases" ~/.aliases '# Basic aliases
+alias ll="ls -la"
+alias la="ls -A"
+alias l="ls -CF"
+alias c="clear"
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+
+# Git aliases
+alias gst="git status"
+alias ga="git add"
+alias gc="git commit"
+alias gco="git checkout"
+alias gcb="git checkout -b"
+alias gp="git push"
+alias gl="git pull"
+
+# Development aliases
+alias python="python3"
+alias pip="pip3"'
+
+  # Create basic .p10k.zsh if missing
+  create_missing_dotfile "$SCRIPT_DIR/.p10k.zsh" ~/.p10k.zsh '# Powerlevel10k configuration
+# This is a basic configuration - run p10k configure for full setup
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(os_icon dir vcs)
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status command_execution_time background_jobs)'
+
   # Backup existing dotfiles if they exist and aren't already symlinks
   backup_dotfile() {
     local file="$1"
@@ -385,27 +477,34 @@ install_additional_tools() {
   fi
 }
 
-install_languages() {
-  print_header "Programming Languages"
-  brew install python node rust go
-  print_status "Programming languages installed."
-}
+# install_languages function removed - languages are now installed via Brewfile
 
 set_macos_defaults() {
   local enable_defaults=$(jq -r '.macos_defaults.enable' "$CONFIG_FILE")
   if [[ "$enable_defaults" == "true" ]]; then
     print_header "macOS System Preferences"
     
-    # Handle the new standardized format
-    local dark_mode=$(jq -r '.macos_defaults.settings.dark_mode' "$CONFIG_FILE" 2>/dev/null)
-    local military_time=$(jq -r '.macos_defaults.settings.military_time' "$CONFIG_FILE" 2>/dev/null)
-    local show_hidden_files=$(jq -r '.macos_defaults.settings.show_hidden_files' "$CONFIG_FILE" 2>/dev/null)
-    local disable_autocorrect=$(jq -r '.macos_defaults.settings.disable_autocorrect' "$CONFIG_FILE" 2>/dev/null)
-    local disable_autocapitalize=$(jq -r '.macos_defaults.settings.disable_autocapitalize' "$CONFIG_FILE" 2>/dev/null)
-    local show_path_bar=$(jq -r '.macos_defaults.settings.show_path_bar' "$CONFIG_FILE" 2>/dev/null)
-    local show_status_bar=$(jq -r '.macos_defaults.settings.show_status_bar' "$CONFIG_FILE" 2>/dev/null)
-    local expand_save_dialog=$(jq -r '.macos_defaults.settings.expand_save_dialog' "$CONFIG_FILE" 2>/dev/null)
-    local expand_print_dialog=$(jq -r '.macos_defaults.settings.expand_print_dialog' "$CONFIG_FILE" 2>/dev/null)
+    # Load macOS defaults from separate file
+    local macos_defaults_file=$(jq -r '.macos_defaults_file // "configs/macos_defaults.json"' "$CONFIG_FILE")
+    local macos_defaults_path="$SCRIPT_DIR/$macos_defaults_file"
+    
+    if [[ ! -f "$macos_defaults_path" ]]; then
+      print_warning "macOS defaults file not found: $macos_defaults_path"
+      return
+    fi
+    
+    print_info "Loading macOS defaults from: $macos_defaults_file"
+    
+    # Load settings from the separate file
+    local dark_mode=$(jq -r '.settings.system.dark_mode' "$macos_defaults_path" 2>/dev/null)
+    local military_time=$(jq -r '.settings.system.military_time' "$macos_defaults_path" 2>/dev/null)
+    local show_hidden_files=$(jq -r '.settings.system.show_hidden_files' "$macos_defaults_path" 2>/dev/null)
+    local disable_autocorrect=$(jq -r '.settings.system.disable_autocorrect' "$macos_defaults_path" 2>/dev/null)
+    local disable_autocapitalize=$(jq -r '.settings.system.disable_autocapitalize' "$macos_defaults_path" 2>/dev/null)
+    local show_path_bar=$(jq -r '.settings.finder.show_path_bar' "$macos_defaults_path" 2>/dev/null)
+    local show_status_bar=$(jq -r '.settings.finder.show_status_bar' "$macos_defaults_path" 2>/dev/null)
+    local expand_save_dialog=$(jq -r '.settings.finder.expand_save_dialog' "$macos_defaults_path" 2>/dev/null)
+    local expand_print_dialog=$(jq -r '.settings.finder.expand_print_dialog' "$macos_defaults_path" 2>/dev/null)
     
     # Apply dark mode
     if [[ "$dark_mode" == "true" ]]; then
@@ -452,13 +551,88 @@ set_macos_defaults() {
       defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
     fi
     
-    # Additional common settings
-    defaults write NSGlobalDomain NSWindowResizeTime -float 0.1
-    defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-    defaults write NSGlobalDomain KeyRepeat -int 1
-    defaults write NSGlobalDomain InitialKeyRepeat -int 15
+    # Essential keyboard and window settings
+    local faster_key_repeat=$(jq -r '.settings.system.faster_key_repeat' "$macos_defaults_path" 2>/dev/null)
+    local show_all_extensions=$(jq -r '.settings.system.show_all_extensions' "$macos_defaults_path" 2>/dev/null)
     
+    if [[ "$faster_key_repeat" == "true" ]]; then
+      defaults write NSGlobalDomain KeyRepeat -int 30
+      defaults write NSGlobalDomain InitialKeyRepeat -int 30
+    else
+      defaults write NSGlobalDomain KeyRepeat -int 1
+      defaults write NSGlobalDomain InitialKeyRepeat -int 15
+    fi
+    
+    if [[ "$show_all_extensions" == "true" ]]; then
+      defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+    fi
+    
+    # Dock settings
+    local dock_autohide=$(jq -r '.settings.dock.autohide' "$macos_defaults_path" 2>/dev/null)
+    local dock_magnification=$(jq -r '.settings.dock.magnification' "$macos_defaults_path" 2>/dev/null)
+    local dock_tilesize=$(jq -r '.settings.dock.tilesize' "$macos_defaults_path" 2>/dev/null)
+    local dock_mru_spaces=$(jq -r '.settings.dock.mru_spaces' "$macos_defaults_path" 2>/dev/null)
+    
+    if [[ "$dock_autohide" == "true" ]]; then
+      defaults write com.apple.dock autohide -bool true
+    else
+      defaults write com.apple.dock autohide -bool false
+    fi
+    
+    if [[ "$dock_magnification" == "true" ]]; then
+      defaults write com.apple.dock magnification -bool true
+    else
+      defaults write com.apple.dock magnification -bool false
+    fi
+    
+    if [[ -n "$dock_tilesize" && "$dock_tilesize" != "null" ]]; then
+      defaults write com.apple.dock tilesize -int "$dock_tilesize"
+    fi
+    
+    if [[ "$dock_mru_spaces" == "true" ]]; then
+      defaults write com.apple.dock mru-spaces -bool true
+    else
+      defaults write com.apple.dock mru-spaces -bool false
+    fi
+    
+    # Finder settings
+    local finder_view_style=$(jq -r '.settings.finder.view_style' "$macos_defaults_path" 2>/dev/null)
+    local finder_show_sidebar=$(jq -r '.settings.finder.show_sidebar' "$macos_defaults_path" 2>/dev/null)
+    local finder_show_tabview=$(jq -r '.settings.finder.show_tabview' "$macos_defaults_path" 2>/dev/null)
+    
+    if [[ -n "$finder_view_style" && "$finder_view_style" != "null" ]]; then
+      defaults write com.apple.finder FXPreferredViewStyle -string "$finder_view_style"
+    fi
+    
+    if [[ "$finder_show_sidebar" == "true" ]]; then
+      defaults write com.apple.finder ShowSidebar -bool true
+    else
+      defaults write com.apple.finder ShowSidebar -bool false
+    fi
+    
+    if [[ "$finder_show_tabview" == "true" ]]; then
+      defaults write com.apple.finder ShowTabView -bool true
+    else
+      defaults write com.apple.finder ShowTabView -bool false
+    fi
+    
+    # Springing behavior (scroll to edge effects)
+    local springing_enabled=$(jq -r '.settings.springing.enabled' "$macos_defaults_path" 2>/dev/null)
+    local springing_delay=$(jq -r '.settings.springing.delay' "$macos_defaults_path" 2>/dev/null)
+    
+    if [[ "$springing_enabled" == "true" ]]; then
+      defaults write NSGlobalDomain com.apple.springing.enabled -bool true
+    else
+      defaults write NSGlobalDomain com.apple.springing.enabled -bool false
+    fi
+    
+    if [[ -n "$springing_delay" && "$springing_delay" != "null" ]]; then
+      defaults write NSGlobalDomain com.apple.springing.delay -string "$springing_delay"
+    fi
+    
+    # Restart Finder and Dock to apply changes
     killall Finder || true
+    killall Dock || true
     print_status "macOS preferences configured."
   fi
 }
@@ -485,6 +659,22 @@ setup_cloud_tools() {
     if [[ $(echo "$cloud_tools" | jq -r '.terraform') == "true" ]]; then
       print_info "Terraform available."
     fi
+  fi
+}
+
+# Set zsh as default shell
+set_zsh_default() {
+  print_header "Setting Zsh as Default Shell"
+  
+  local current_shell=$(echo $SHELL)
+  local zsh_path=$(which zsh)
+  
+  if [[ "$current_shell" != "$zsh_path" ]]; then
+    print_info "Setting zsh as default shell..."
+    chsh -s "$zsh_path"
+    print_status "Zsh set as default shell. Please restart your terminal for changes to take effect."
+  else
+    print_status "Zsh is already the default shell"
   fi
 }
 
@@ -548,8 +738,7 @@ show_next_steps() {
   
   if [[ "$SETUP_TYPE" == "work" ]]; then
     echo "  5. Configure AWS CLI: aws configure"
-    echo "  6. Test Docker: docker --version"
-    echo "  7. Test Kubernetes: kubectl version"
+    echo "  6. Set up SSH keys manually if needed"
   fi
   
   echo -e "\n🎉 Setup complete for $CONFIG_NAME configuration!"
@@ -571,13 +760,12 @@ main() {
   detect_os
   install_nerd_fonts
   install_manual_apps
-  install_languages
-  set_macos_defaults
   setup_dotfiles
   install_additional_tools
   setup_git_config
   setup_ssh
   setup_cloud_tools
+  set_zsh_default
   
   # Final steps
   verify_setup
