@@ -12,13 +12,75 @@
 #   None
 #######################################
 
+# Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 BBLUE='\033[1;34m'
-NC='\033[0m'
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+NC='\033[0m' # No Color
 
+# Error handling function
+error_exit() {
+    echo -e "${RED}ERROR: $1${NC}" >&2
+    exit 1
+}
+
+# Check if command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Safe directory change
+safe_cd() {
+    if [ -d "$1" ]; then
+        cd "$1" || error_exit "Failed to change to directory: $1"
+    else
+        error_exit "Directory does not exist: $1"
+    fi
+}
+
+# Check if we're in a git repository
+is_git_repo() {
+    git rev-parse --git-dir >/dev/null 2>&1
+}
+
+# Get current git branch
+get_current_branch() {
+    if is_git_repo; then
+        git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null
+    else
+        echo ""
+    fi
+}
+
+# Get default branch (main, master, or configured)
+get_default_branch() {
+    # Try to get the default branch from git config
+    local default_branch=$(git config --get init.defaultBranch 2>/dev/null)
+    
+    # If not set, try to detect from remote
+    if [ -z "$default_branch" ]; then
+        default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+    fi
+    
+    # If still not found, check if main or master exists
+    if [ -z "$default_branch" ]; then
+        if git show-ref --verify --quiet refs/heads/main; then
+            default_branch="main"
+        elif git show-ref --verify --quiet refs/heads/master; then
+            default_branch="master"
+        else
+            # Fallback to current branch if no default found
+            default_branch=$(get_current_branch)
+        fi
+    fi
+    
+    echo "$default_branch"
+}
 
 # debug () { ${debug-:} "$0: $@" >&2; }
 # info () {  ${info-:}  "$0: $@" >&2; }
