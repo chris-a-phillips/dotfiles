@@ -89,6 +89,25 @@ clone_dotfiles() {
   fi
 }
 
+# Show manual setup instructions
+show_manual_setup() {
+  print_header "Manual Setup Instructions"
+  
+  echo -e "\nSince you're running this via curl, input prompts may not work properly."
+  echo -e "Please follow these manual steps:\n"
+  
+  echo "1. Clone the repository manually:"
+  echo "   git clone https://github.com/chris-a-phillips/dotfiles.git ~/.dotfiles"
+  echo ""
+  echo "2. Navigate to the directory:"
+  echo "   cd ~/.dotfiles"
+  echo ""
+  echo "3. Run the installer directly:"
+  echo "   ./install.sh"
+  echo ""
+  echo "This will allow you to interact with the setup prompts properly."
+}
+
 # Run the main installer
 run_installer() {
   print_header "Running Main Installer"
@@ -130,14 +149,16 @@ main() {
   # Install Xcode tools
   install_xcode_tools
   
-  # Clone dotfiles
-  clone_dotfiles
-  
-  # Run installer
-  run_installer
-  
-  # Show completion
-  show_completion
+  # Check if running via curl
+  if [[ -t 0 ]]; then
+    # Interactive mode - clone and run installer
+    clone_dotfiles
+    run_installer
+    show_completion
+  else
+    # Non-interactive mode (via curl) - show manual instructions
+    show_manual_setup
+  fi
 }
 
 # Run main function
