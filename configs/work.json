@@ -1,15 +1,16 @@
 {
   "name": "Work",
-  "description": "Comprehensive setup for work development with cloud tools",
+  "description": "Comprehensive setup for work development with essential tools",
   "brewfile": "Brewfile-work",
+  "macos_defaults_file": "configs/macos_defaults.json",
   "features": {
     "core_tools": true,
     "development": true,
     "productivity": true,
-    "cloud_tools": true,
-    "extensive_fonts": true,
-    "remote_development": true,
-    "unity_development": true,
+    "cloud_tools": false,
+    "extensive_fonts": false,
+    "remote_development": false,
+    "unity_development": false,
     "gaming": false
   },
   "packages": {
@@ -18,27 +19,20 @@
       "asdf",
       "aws-sam-cli",
       "awscli",
-      "colima",
       "colordiff",
       "credstash",
       "cryptography",
       "direnv",
-      "docker",
-      "docker-credential-helper",
       "docutils",
       "git-lfs",
       "gnupg",
       "harlequin",
       "jq",
-      "kubernetes-cli",
-      "kubectx",
       "lazysql",
-      "lima",
       "mysql",
       "openssl@3",
       "pycparser",
       "qemu",
-      "redis",
       "telnet",
       "tlrc",
       "urlview",
@@ -51,25 +45,14 @@
     ]
   },
   "macos_defaults": {
-    "enable": true,
-    "settings": {
-      "dark_mode": true,
-      "military_time": true,
-      "show_hidden_files": true,
-      "disable_autocorrect": true,
-      "disable_autocapitalize": true,
-      "show_path_bar": true,
-      "show_status_bar": true,
-      "expand_save_dialog": true,
-      "expand_print_dialog": true
-    }
+    "enable": true
   },
   "git_config": {
     "enable": true,
     "prompt_for_credentials": true
   },
   "ssh_setup": {
-    "enable": true,
+    "enable": false,
     "key_type": "ed25519",
     "key_name": "work"
   },
@@ -81,8 +64,8 @@
   },
   "cloud_tools": {
     "aws_cli": true,
-    "docker": true,
-    "kubernetes": true,
-    "terraform": true
+    "docker": false,
+    "kubernetes": false,
+    "terraform": false
   }
 } 
