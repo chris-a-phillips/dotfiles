@@ -17,6 +17,17 @@ CONFIGS_DIR="$SCRIPT_DIR/configs"
 CONFIG_FILE=""
 SETUP_TYPE=""
 
+# Error handling function
+handle_error() {
+  local exit_code=$?
+  print_error "Script failed at line $1 with exit code $exit_code"
+  print_warning "Some steps may have completed successfully. You can run the script again to continue."
+  exit $exit_code
+}
+
+# Set up error handling
+trap 'handle_error $LINENO' ERR
+
 # Spinner for visual feedback
 spinner() {
   local pid=$1
@@ -63,7 +74,12 @@ print_header() {
 load_config() {
   if [[ ! -f "$CONFIG_FILE" ]]; then
     print_error "Configuration file not found: $CONFIG_FILE"
-    exit 1
+    print_warning "Falling back to work configuration..."
+    CONFIG_FILE="$CONFIGS_DIR/work.json"
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+      print_error "Work configuration not found either. Please check your configs directory."
+      return 1
+    fi
   fi
   
   # Use jq to parse JSON (install if not available)
@@ -114,8 +130,10 @@ choose_setup_type() {
       SETUP_TYPE="custom"
       ;;
     *)
-      print_error "Invalid choice. Exiting."
-      exit 1
+      print_error "Invalid choice."
+      print_info "Defaulting to Work setup (option 2)"
+      SETUP_TYPE="work"
+      CONFIG_FILE="$CONFIGS_DIR/work.json"
       ;;
   esac
   
@@ -135,10 +153,13 @@ install_brew_packages() {
   print_info "Installing packages from $BREWFILE..."
   local BREWFILE_PATH="$SCRIPT_DIR/$BREWFILE"
   if [[ -f "$BREWFILE_PATH" ]]; then
-    brew bundle --file="$BREWFILE_PATH"
+    print_info "Running brew bundle..."
+    brew bundle --file="$BREWFILE_PATH" || {
+      print_warning "Some packages failed to install. Continuing with setup..."
+    }
   else
     print_error "Brewfile not found: $BREWFILE_PATH"
-    exit 1
+    print_warning "Skipping package installation. You can install packages manually later."
   fi
 }
 
@@ -166,7 +187,7 @@ detect_os() {
       ;;
     *)
       print_error "Unsupported OS: $OS"
-      exit 1
+      print_warning "This script is designed for macOS and Linux. Some features may not work."
       ;;
   esac
 }
@@ -211,24 +232,25 @@ install_manual_apps() {
 }
 
 restore_app_configs() {
-  print_info "Restoring app configurations..."
+  print_info "App configuration files available for reference:"
   
   # Raycast
   RAYCAST_BACKUP="$SCRIPT_DIR/app_configs/raycast"
   if [[ -d "$RAYCAST_BACKUP" ]]; then
-    mkdir -p "$HOME/Library/Application Support/com.raycast.macos"
-    cp -R "$RAYCAST_BACKUP"/* "$HOME/Library/Application Support/com.raycast.macos/"
-    print_status "Raycast settings restored."
+    print_info "Raycast config available: $RAYCAST_BACKUP"
+  else
+    print_warning "Raycast config not found."
   fi
   
   # Rectangle Pro
-  RECTANGLE_PLIST="$SCRIPT_DIR/app_configs/rectangle-pro/com.knollsoft.Rectangle-Pro.plist"
-  if [[ -f "$RECTANGLE_PLIST" ]]; then
-    mkdir -p "$HOME/Library/Preferences"
-    cp "$RECTANGLE_PLIST" "$HOME/Library/Preferences/"
-    defaults import com.knollsoft.Rectangle-Pro "$RECTANGLE_PLIST"
-    print_status "Rectangle Pro settings restored."
+  RECTANGLE_CONFIG="$SCRIPT_DIR/app_configs/rectangle_pro/RectangleProConfig.json"
+  if [[ -f "$RECTANGLE_CONFIG" ]]; then
+    print_info "Rectangle Pro config available: $RECTANGLE_CONFIG"
+  else
+    print_warning "Rectangle Pro config not found."
   fi
+  
+  print_info "These files are for reference only - manual setup required."
 }
 
 # Git Config
@@ -742,6 +764,7 @@ show_next_steps() {
   fi
   
   echo -e "\n🎉 Setup complete for $CONFIG_NAME configuration!"
+  echo -e "\n💡 If any steps failed, you can run the script again to retry specific parts."
 }
 
 # Main setup runner

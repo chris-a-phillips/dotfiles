@@ -63,13 +63,24 @@ clone_dotfiles() {
   
   if [[ -d "$DOTFILES_DIR" ]]; then
     print_warning "Dotfiles directory already exists at $DOTFILES_DIR"
-    read -p "Do you want to update it? (y/n): " -r
+    echo -e "\nOptions:"
+    echo "  y) Update existing dotfiles and continue"
+    echo "  n) Use existing dotfiles (may be outdated)"
+    echo "  r) Remove existing dotfiles and start fresh"
+    echo ""
+    read -p "What would you like to do? (y/n/r): " -r
     if [[ $REPLY =~ ^[Yy]$ ]]; then
+      print_info "Updating existing dotfiles..."
       cd "$DOTFILES_DIR"
       git pull origin main
       print_status "Dotfiles updated"
+    elif [[ $REPLY =~ ^[Rr]$ ]]; then
+      print_info "Removing existing dotfiles and starting fresh..."
+      rm -rf "$DOTFILES_DIR"
+      git clone https://github.com/chris-a-phillips/dotfiles.git "$DOTFILES_DIR"
+      print_status "Dotfiles cloned fresh"
     else
-      print_info "Using existing dotfiles"
+      print_info "Using existing dotfiles (may be outdated)"
     fi
   else
     print_info "Cloning dotfiles repository..."
