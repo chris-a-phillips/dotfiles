@@ -101,41 +101,10 @@ load_config() {
 # Choose setup type
 choose_setup_type() {
   print_header "Setup Type Selection"
-  echo -e "\n💻 Choose your setup type:"
-  echo "1) Personal - Minimal setup for personal development"
-  echo "2) Work - Comprehensive setup with cloud tools"
-  echo "3) Default - Basic setup with essential tools"
-  echo "4) Custom - Select specific configuration file"
+  print_info "Automatically selecting Work setup for new laptop"
   
-  read -p "Enter your choice (1-4): " choice
-  
-  case $choice in
-    1)
-      SETUP_TYPE="personal"
-      CONFIG_FILE="$CONFIGS_DIR/personal.json"
-      ;;
-    2)
-      SETUP_TYPE="work"
-      CONFIG_FILE="$CONFIGS_DIR/work.json"
-      ;;
-    3)
-      SETUP_TYPE="default"
-      CONFIG_FILE="$CONFIGS_DIR/default.json"
-      ;;
-    4)
-      print_info "Available configurations:"
-      ls -1 "$CONFIGS_DIR"/*.json | sed 's/.*\///' | sed 's/\.json$//'
-      read -p "Enter configuration name: " custom_config
-      CONFIG_FILE="$CONFIGS_DIR/${custom_config}.json"
-      SETUP_TYPE="custom"
-      ;;
-    *)
-      print_error "Invalid choice."
-      print_info "Defaulting to Work setup (option 2)"
-      SETUP_TYPE="work"
-      CONFIG_FILE="$CONFIGS_DIR/work.json"
-      ;;
-  esac
+  SETUP_TYPE="work"
+  CONFIG_FILE="$CONFIGS_DIR/work.json"
   
   load_config
 }
@@ -259,23 +228,16 @@ setup_git_config() {
   if [[ "$enable_git" == "true" ]]; then
     print_header "Git Configuration"
     
-    local prompt_credentials=$(jq -r '.git_config.prompt_for_credentials' "$CONFIG_FILE")
-    if [[ "$prompt_credentials" == "true" ]]; then
-      if ! git config --global user.name >/dev/null; then
-        read -p "🪪 Git user name: " git_name
-        git config --global user.name "$git_name"
-      fi
-      if ! git config --global user.email >/dev/null; then
-        read -p "📧 Git user email: " git_email
-        git config --global user.email "$git_email"
-      fi
-    fi
+    print_info "Git configuration will be set up manually after installation"
+    print_info "Run these commands to configure Git:"
+    print_info "  git config --global user.name 'Your Name'"
+    print_info "  git config --global user.email 'your-email@company.com'"
     
     [ -f "$HOME/.gitignore_global" ] && \
       git config --global core.excludesfile "$HOME/.gitignore_global"
     [[ "$(uname)" == "Darwin" ]] && \
       git config --global credential.helper osxkeychain
-    print_status "Git configuration completed."
+    print_status "Git configuration ready for manual setup."
   fi
 }
 

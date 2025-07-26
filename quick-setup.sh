@@ -63,25 +63,10 @@ clone_dotfiles() {
   
   if [[ -d "$DOTFILES_DIR" ]]; then
     print_warning "Dotfiles directory already exists at $DOTFILES_DIR"
-    echo -e "\nOptions:"
-    echo "  y) Update existing dotfiles and continue"
-    echo "  n) Use existing dotfiles (may be outdated)"
-    echo "  r) Remove existing dotfiles and start fresh"
-    echo ""
-    read -p "What would you like to do? (y/n/r): " -r
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      print_info "Updating existing dotfiles..."
-      cd "$DOTFILES_DIR"
-      git pull origin main
-      print_status "Dotfiles updated"
-    elif [[ $REPLY =~ ^[Rr]$ ]]; then
-      print_info "Removing existing dotfiles and starting fresh..."
-      rm -rf "$DOTFILES_DIR"
-      git clone https://github.com/chris-a-phillips/dotfiles.git "$DOTFILES_DIR"
-      print_status "Dotfiles cloned fresh"
-    else
-      print_info "Using existing dotfiles (may be outdated)"
-    fi
+    print_info "Updating existing dotfiles..."
+    cd "$DOTFILES_DIR"
+    git pull origin main
+    print_status "Dotfiles updated"
   else
     print_info "Cloning dotfiles repository..."
     git clone https://github.com/chris-a-phillips/dotfiles.git "$DOTFILES_DIR"
@@ -149,16 +134,10 @@ main() {
   # Install Xcode tools
   install_xcode_tools
   
-  # Check if running via curl
-  if [[ -t 0 ]]; then
-    # Interactive mode - clone and run installer
-    clone_dotfiles
-    run_installer
-    show_completion
-  else
-    # Non-interactive mode (via curl) - show manual instructions
-    show_manual_setup
-  fi
+  # Clone and run installer automatically
+  clone_dotfiles
+  run_installer
+  show_completion
 }
 
 # Run main function
