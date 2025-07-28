@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# Open file in macOS Finder
+. _utils
+
+#######################################
+# Open file in macOS Finder
+# Arguments:
+#   $1 - File path to open in Finder
+# Outputs:
+#   Opens file in Finder and selects it
+#######################################
+
+main() {
+    local file_path="$1"
+    
+    # Check if file path is provided
+    if [ -z "$file_path" ]; then
+        error_exit "Please provide a file path to open in Finder"
+    fi
+    
+    # Check if file exists
+    if [ ! -e "$file_path" ]; then
+        error_exit "File does not exist: $file_path"
+    fi
+    
+    # Convert to absolute path if relative
+    if [ ! -d "$file_path" ] && [ ! -f "$file_path" ]; then
+        error_exit "Invalid path: $file_path"
+    fi
+    
+    # Get absolute path
+    local abs_path=$(realpath "$file_path" 2>/dev/null || echo "$file_path")
+    
+    echo -e "${GREEN}Opening in Finder: $abs_path${NC}"
+    
+    # Open in Finder and select the file
+    open -R "$abs_path"
+}
+
+main "$@" 
