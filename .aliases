@@ -83,6 +83,7 @@ fi
 alias gnuke="git reset --hard"                      # Git reset hard
 alias gdelete="git branch -D"                        # Git delete branch
 alias ga="git add"                                   # Git add
+alias gacm="git add . && git commit -m"              # Git add all and commit with message
 alias gb="git branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"  # Git branch with formatting
 alias gbr="git branch -r --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"  # Git remote branch with formatting
 alias gf="git fetch"                                 # Git fetch
