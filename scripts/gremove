@@ -35,19 +35,19 @@ show_usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  -s, --soft     Soft reset (keep changes staged)"
-    echo "  -m, --mixed    Mixed reset (keep changes unstaged)"
-    echo "  -h, --hard     Hard reset (discard all changes) [default]"
-    echo "  -r, --revert   Create a revert commit"
+    echo "  -s, --soft     Remove commit via interactive rebase"
+    echo "  -m, --mixed    Remove commit via interactive rebase"
+    echo "  -h, --hard     Remove commit via interactive rebase [default]"
+    echo "  -r, --revert   Create a revert commit (preserves history)"
     echo "  -i, --interactive Interactive rebase to remove commit"
     echo "  -l, --list     List recent commits"
     echo "  -h, --help     Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0                    # Interactive hard reset (default)"
-    echo "  $0 -s                 # Interactive soft reset"
-    echo "  $0 -m                 # Interactive mixed reset"
-    echo "  $0 -r                 # Interactive revert commit"
+    echo "  $0                    # Remove commit via interactive rebase (default)"
+    echo "  $0 -s                 # Remove commit via interactive rebase"
+    echo "  $0 -m                 # Remove commit via interactive rebase"
+    echo "  $0 -r                 # Create revert commit (preserves history)"
     echo "  $0 -i                 # Interactive rebase"
     echo "  $0 -l                 # List recent commits"
 }
@@ -200,19 +200,22 @@ interactive_commit_selection() {
                     # Perform the action
                     case $reset_type in
                         "soft reset")
-                            print_info "Performing soft reset to $short_hash..."
-                            git reset --soft "$selected_commit"
-                            print_success "Soft reset completed. Changes are staged."
+                            print_info "Performing interactive rebase to remove $short_hash..."
+                            print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
+                            git rebase -i "$selected_commit"^
+                            print_success "Commit removed via interactive rebase."
                             ;;
                         "mixed reset")
-                            print_info "Performing mixed reset to $short_hash..."
-                            git reset --mixed "$selected_commit"
-                            print_success "Mixed reset completed. Changes are unstaged."
+                            print_info "Performing interactive rebase to remove $short_hash..."
+                            print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
+                            git rebase -i "$selected_commit"^
+                            print_success "Commit removed via interactive rebase."
                             ;;
                         "hard reset")
-                            print_info "Performing hard reset to $short_hash..."
-                            git reset --hard "$selected_commit"
-                            print_success "Hard reset completed. All changes discarded."
+                            print_info "Performing interactive rebase to remove $short_hash..."
+                            print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
+                            git rebase -i "$selected_commit"^
+                            print_success "Commit removed via interactive rebase."
                             ;;
                         "revert commit")
                             print_info "Creating revert commit for $short_hash..."
@@ -342,19 +345,22 @@ main() {
             # Perform the action
             case $reset_type in
                 "soft reset")
-                    print_info "Performing soft reset to $short_hash..."
-                    git reset --soft "$commit"
-                    print_success "Soft reset completed. Changes are staged."
+                    print_info "Performing interactive rebase to remove $short_hash..."
+                    print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
+                    git rebase -i "$commit"^
+                    print_success "Commit removed via interactive rebase."
                     ;;
                 "mixed reset")
-                    print_info "Performing mixed reset to $short_hash..."
-                    git reset --mixed "$commit"
-                    print_success "Mixed reset completed. Changes are unstaged."
+                    print_info "Performing interactive rebase to remove $short_hash..."
+                    print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
+                    git rebase -i "$commit"^
+                    print_success "Commit removed via interactive rebase."
                     ;;
                 "hard reset")
-                    print_info "Performing hard reset to $short_hash..."
-                    git reset --hard "$commit"
-                    print_success "Hard reset completed. All changes discarded."
+                    print_info "Performing interactive rebase to remove $short_hash..."
+                    print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
+                    git rebase -i "$commit"^
+                    print_success "Commit removed via interactive rebase."
                     ;;
                 "revert commit")
                     print_info "Creating revert commit for $short_hash..."
