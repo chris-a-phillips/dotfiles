@@ -1,38 +1,21 @@
 #!/bin/bash
+#
+# Git commit removal script
+. _utils
 
+#######################################
 # Git Commit Removal Script
 # This script provides different ways to remove a specific git commit
-
-set -e
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-BBLUE='\033[1;34m'
-NC='\033[0m' # No Color
-
-# Function to print colored output
-print_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
+# Arguments:
+#   $1 - Commit hash to remove
+#   $2 - Removal method (soft/mixed/hard/revert/interactive/list)
+# Outputs:
+#   Removes the specified commit using the chosen method
+#######################################
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [OPTIONS]"
+    echo "Usage: $0 [OPTIONS] [COMMIT_HASH]"
     echo ""
     echo "Options:"
     echo "  -s, --soft     Remove commit via interactive rebase"
@@ -62,9 +45,8 @@ list_commits() {
 
 # Function to check if we're in a git repository
 check_git_repo() {
-    if ! git rev-parse --git-dir > /dev/null 2>&1; then
-        print_error "Not in a git repository!"
-        exit 1
+    if ! is_git_repo; then
+        error_exit "Not in a git repository!"
     fi
 }
 
@@ -72,8 +54,7 @@ check_git_repo() {
 check_commit() {
     local commit_hash=$1
     if ! git rev-parse --verify "$commit_hash" > /dev/null 2>&1; then
-        print_error "Commit $commit_hash does not exist!"
-        exit 1
+        error_exit "Commit $commit_hash does not exist!"
     fi
 }
 
@@ -98,194 +79,84 @@ confirm_action() {
 # Get commit info with color formatting
 get_commit_info() {
     local commit_hash="$1"
-    # Get the commit info using git log
-    local full_info=$(git log --oneline -1 "$commit_hash" --format="%s (%cr) %an" 2>/dev/null)
+    local short_hash=$(git rev-parse --short "$commit_hash")
+    local subject=$(git log --format=%s -n 1 "$commit_hash")
+    local author=$(git log --format=%an -n 1 "$commit_hash")
+    local date=$(git log --format=%cr -n 1 "$commit_hash")
     
-    # Split the info into parts for coloring
-    local subject=$(echo "$full_info" | sed 's/ (.*) .*$//')
-    local date_author=$(echo "$full_info" | sed 's/^.* (/(/')
-    
-    # Return with color formatting
-    echo "${BLUE}$subject${NC} ${GREEN}$date_author${NC}"
+    echo -e "${YELLOW}$short_hash${NC} - ${BLUE}$subject${NC} (${GREEN}$author${NC}, ${CYAN}$date${NC})"
 }
 
-# Interactive commit selection with arrow keys
-interactive_commit_selection() {
-    local reset_type="$1"
-    local commits=($(git log --oneline -5 --format="%H"))
-    local selected=0
-    local total=${#commits[@]}
+# Function to remove commit via interactive rebase
+remove_via_rebase() {
+    local commit_hash=$1
+    local method=${2:-hard}
     
-    # Hide cursor
-    tput civis
+    print_info "Removing commit via interactive rebase ($method)..."
     
-    # Function to display menu
-    display_menu() {
-        # Clear the menu area
-        for ((i=0; i<$((total + 3)); i++)); do
-            echo -ne "\033[K"  # Clear line
-            tput cuu1
-        done
-        
-        echo -e "${BBLUE}Select commit to remove (${reset_type}):${NC}"
-        echo "Use ↑/↓ arrows, Enter to select, q to quit"
-        echo "=========================================="
-        
-        # Show commits with same formatting as git log output
-        for i in "${!commits[@]}"; do
-            local commit="${commits[$i]}"
-            local short_hash=$(git rev-parse --short "$commit")
-            local commit_info=$(get_commit_info "$commit")
-            
-            if [ "$i" -eq "$selected" ]; then
-                echo -e "${GREEN}→ ${YELLOW}$short_hash${NC}  - $commit_info"
-            else
-                echo -e "  ${YELLOW}$short_hash${NC}  - $commit_info"
-            fi
-        done
-    }
+    # Find the commit before the target commit
+    local parent_commit=$(git rev-parse "$commit_hash^")
     
-    # Initial display
-    echo -e "${BBLUE}Select commit to remove (${reset_type}):${NC}"
-    echo "Use ↑/↓ arrows, Enter to select, q to quit"
-    echo "=========================================="
-    
-    # Show initial menu
-    for i in "${!commits[@]}"; do
-        local commit="${commits[$i]}"
-        local short_hash=$(git rev-parse --short "$commit")
-        local commit_info=$(get_commit_info "$commit")
-        
-        if [ "$i" -eq "$selected" ]; then
-            echo -e "${GREEN}→ ${YELLOW}$short_hash${NC}  - $commit_info"
-        else
-            echo -e "  ${YELLOW}$short_hash${NC}  - $commit_info"
-        fi
-    done
-    
-    # Main selection loop
-    while true; do
-        # Read key input
-        read -rsn1 key
-        
-        # Handle escape sequences
-        if [ "$key" = $'\x1b' ]; then
-            read -rsn2 key
-            case "$key" in
-                '[A') # Up arrow
-                    if [ $selected -gt 0 ]; then
-                        ((selected--))
-                        display_menu
-                    fi
-                    ;;
-                '[B') # Down arrow
-                    if [ $selected -lt $((total - 1)) ]; then
-                        ((selected++))
-                        display_menu
-                    fi
-                    ;;
-            esac
-        else
-            # Handle single character keys
-            case "$key" in
-                $'\x0d'|$'\x0a'|'') # Enter key (various forms)
-                    local selected_commit="${commits[$selected]}"
-                    local short_hash=$(git rev-parse --short "$selected_commit")
-                    tput cnorm
-                    echo ""
-                    
-                    # Confirm action
-                    confirm_action "$reset_type" "$short_hash"
-                    
-                    # Perform the action
-                    case $reset_type in
-                        "soft reset")
-                            print_info "Performing interactive rebase to remove $short_hash..."
-                            print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
-                            git rebase -i "$selected_commit"^
-                            print_success "Commit removed via interactive rebase."
-                            ;;
-                        "mixed reset")
-                            print_info "Performing interactive rebase to remove $short_hash..."
-                            print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
-                            git rebase -i "$selected_commit"^
-                            print_success "Commit removed via interactive rebase."
-                            ;;
-                        "hard reset")
-                            print_info "Performing interactive rebase to remove $short_hash..."
-                            print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
-                            git rebase -i "$selected_commit"^
-                            print_success "Commit removed via interactive rebase."
-                            ;;
-                        "revert commit")
-                            print_info "Creating revert commit for $short_hash..."
-                            git revert "$selected_commit" --no-edit
-                            print_success "Revert commit created."
-                            ;;
-                        "interactive rebase")
-                            print_info "Starting interactive rebase..."
-                            print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
-                            git rebase -i "$selected_commit"^
-                            print_success "Interactive rebase completed."
-                            ;;
-                        *)
-                            print_error "Unknown reset type: $reset_type"
-                            exit 1
-                            ;;
-                    esac
-                    
-                    # Show current status
-                    echo ""
-                    print_info "Current status:"
-                    git status --short
-                    echo ""
-                    print_info "Recent commits:"
-                    git log --oneline -5
-                    
-                    return 0
-                    ;;
-                q|Q) # Quit
-                    tput cnorm
-                    echo ""
-                    echo -e "${YELLOW}Exiting...${NC}"
-                    return 0
-                    ;;
-            esac
-        fi
-    done
+    # Start interactive rebase
+    if git rebase -i "$parent_commit"; then
+        print_success "Commit removed successfully!"
+    else
+        print_error "Interactive rebase failed. You may need to resolve conflicts manually."
+        print_info "To abort the rebase: git rebase --abort"
+        print_info "To continue after resolving conflicts: git rebase --continue"
+    fi
 }
 
-# Main script logic
+# Function to create revert commit
+create_revert_commit() {
+    local commit_hash=$1
+    
+    print_info "Creating revert commit..."
+    
+    if git revert --no-edit "$commit_hash"; then
+        print_success "Revert commit created successfully!"
+    else
+        print_error "Failed to create revert commit"
+    fi
+}
+
+# Function to perform interactive rebase
+interactive_rebase() {
+    print_info "Starting interactive rebase..."
+    print_info "In the editor, change 'pick' to 'drop' for commits you want to remove"
+    
+    if git rebase -i HEAD~5; then
+        print_success "Interactive rebase completed successfully!"
+    else
+        print_error "Interactive rebase failed"
+    fi
+}
+
 main() {
-    local reset_type="hard reset"
-    local action=""
+    local method="hard"
+    local commit_hash=""
     
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             -s|--soft)
-                reset_type="soft reset"
-                action="soft reset"
+                method="soft"
                 shift
                 ;;
             -m|--mixed)
-                reset_type="mixed reset"
-                action="mixed reset"
+                method="mixed"
                 shift
                 ;;
             -h|--hard)
-                reset_type="hard reset"
-                action="hard reset"
+                method="hard"
                 shift
                 ;;
             -r|--revert)
-                reset_type="revert commit"
-                action="revert commit"
+                method="revert"
                 shift
                 ;;
             -i|--interactive)
-                reset_type="interactive rebase"
-                action="interactive rebase"
+                method="interactive"
                 shift
                 ;;
             -l|--list)
@@ -302,9 +173,13 @@ main() {
                 exit 1
                 ;;
             *)
-                print_error "Unexpected argument: $1"
-                show_usage
-                exit 1
+                if [ -z "$commit_hash" ]; then
+                    commit_hash="$1"
+                else
+                    print_error "Multiple commit hashes provided"
+                    exit 1
+                fi
+                shift
                 ;;
         esac
     done
@@ -312,85 +187,32 @@ main() {
     # Check if we're in a git repository
     check_git_repo
     
-    # Check if terminal supports interactive features
-    if [ -t 0 ] && [ -t 1 ]; then
-        # Use interactive selection
-        interactive_commit_selection "$reset_type"
-    else
-        # Fallback to original select method
-        echo -e "${BBLUE}Last 5 commits:${NC}"
-        echo "$(git log --oneline -5 --format='%1B[1;33m%h%1B[m  - %(contents:subject) %1B[0;32m(%(committerdate:relative)) %(authorname)%1B[m')"
-        echo -e "${BBLUE}============================================================================${NC}"
-        
-        PS3="Select commit to remove: "
-        eval "$(git log --oneline -5 --format='commits+=(%(H))')"
-        echo "Git remove options:"
-        
-        select commit in "${commits[@]}"; do
-            if [[ "$REPLY" == 'q' || "$REPLY" == 'Q' ]]; then
-                echo -e "${YELLOW}Exiting...${NC}"
-                break
+    # Handle different methods
+    case $method in
+        "interactive")
+            interactive_rebase
+            ;;
+        "revert")
+            if [ -z "$commit_hash" ]; then
+                print_error "Commit hash required for revert operation"
+                show_usage
+                exit 1
             fi
-            
-            if [[ -z "$commit" ]]; then
-                echo -e "${RED}Invalid option: $REPLY${NC}"
-                continue
+            check_commit "$commit_hash"
+            confirm_action "revert commit" "$commit_hash"
+            create_revert_commit "$commit_hash"
+            ;;
+        *)
+            if [ -z "$commit_hash" ]; then
+                print_error "Commit hash required"
+                show_usage
+                exit 1
             fi
-            
-            local short_hash=$(git rev-parse --short "$commit")
-            
-            # Confirm action
-            confirm_action "$reset_type" "$short_hash"
-            
-            # Perform the action
-            case $reset_type in
-                "soft reset")
-                    print_info "Performing interactive rebase to remove $short_hash..."
-                    print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
-                    git rebase -i "$commit"^
-                    print_success "Commit removed via interactive rebase."
-                    ;;
-                "mixed reset")
-                    print_info "Performing interactive rebase to remove $short_hash..."
-                    print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
-                    git rebase -i "$commit"^
-                    print_success "Commit removed via interactive rebase."
-                    ;;
-                "hard reset")
-                    print_info "Performing interactive rebase to remove $short_hash..."
-                    print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
-                    git rebase -i "$commit"^
-                    print_success "Commit removed via interactive rebase."
-                    ;;
-                "revert commit")
-                    print_info "Creating revert commit for $short_hash..."
-                    git revert "$commit" --no-edit
-                    print_success "Revert commit created."
-                    ;;
-                "interactive rebase")
-                    print_info "Starting interactive rebase..."
-                    print_info "In the editor, change 'pick' to 'drop' for the commit you want to remove."
-                    git rebase -i "$commit"^
-                    print_success "Interactive rebase completed."
-                    ;;
-                *)
-                    print_error "Unknown reset type: $reset_type"
-                    exit 1
-                    ;;
-            esac
-            
-            # Show current status
-            echo ""
-            print_info "Current status:"
-            git status --short
-            echo ""
-            print_info "Recent commits:"
-            git log --oneline -5
-            
-            break
-        done
-    fi
+            check_commit "$commit_hash"
+            confirm_action "remove commit via $method rebase" "$commit_hash"
+            remove_via_rebase "$commit_hash" "$method"
+            ;;
+    esac
 }
 
-# Run main function with all arguments
 main "$@" 

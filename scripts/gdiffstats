@@ -1,0 +1,215 @@
+#!/bin/bash
+#
+# Generate git diff patches
+. _utils
+
+#######################################
+# Generate git diff patches with enhanced features
+# Arguments:
+#   $1 - Base branch (default: develop)
+#   $2 - Target branch/commit (default: HEAD)
+#   $3 - Output file (optional, will auto-generate if not provided)
+# Outputs:
+#   Creates a patch file with the diff
+#######################################
+
+# Generate default output filename
+generate_output_filename() {
+  local base_branch="$1"
+  local target_branch="$2"
+  local timestamp=$(date +%Y%m%d_%H%M%S)
+  local current_branch=$(get_current_branch)
+
+  # Create a descriptive filename
+  if [ "$target_branch" = "HEAD" ]; then
+    echo "${current_branch}_vs_${base_branch}_${timestamp}.patch"
+  else
+    echo "${target_branch}_vs_${base_branch}_${timestamp}.patch"
+  fi
+}
+
+# Validate git repository and branches
+validate_inputs() {
+  local base_branch="$1"
+  local target_branch="$2"
+
+  # Check if we're in a git repository
+  if ! is_git_repo; then
+    error_exit "Not in a git repository"
+  fi
+
+  # Check if base branch exists
+  if ! git show-ref --verify --quiet refs/heads/$base_branch && ! git show-ref --verify --quiet refs/remotes/origin/$base_branch; then
+    error_exit "Base branch '$base_branch' not found locally or remotely"
+  fi
+
+  # Check if target branch/commit exists (unless it's HEAD)
+  if [ "$target_branch" != "HEAD" ]; then
+    if ! git rev-parse --verify "$target_branch" >/dev/null 2>&1; then
+      error_exit "Target '$target_branch' not found"
+    fi
+  fi
+}
+
+# Show diff statistics
+show_diff_stats() {
+  local base_branch="$1"
+  local target_branch="$2"
+
+  echo -e "${CYAN}Diff Statistics:${NC}"
+  echo "=================="
+
+  # Count files changed
+  local files_changed=$(git diff --name-only $base_branch...$target_branch | wc -l)
+  echo -e "Files changed: ${YELLOW}$files_changed${NC}"
+
+  # Count lines added/removed
+  local lines_stats=$(git diff --stat $base_branch...$target_branch | tail -1)
+  if [ -n "$lines_stats" ]; then
+    echo -e "Lines changed: ${YELLOW}$lines_stats${NC}"
+  fi
+
+  # Show file types
+  echo -e "${CYAN}File types changed:${NC}"
+  git diff --name-only $base_branch...$target_branch | sed 's/.*\.//' | sort | uniq -c | sort -nr | head -5
+}
+
+# Generate the patch
+generate_patch() {
+  local base_branch="$1"
+  local target_branch="$2"
+  local output_file="$3"
+
+  echo -e "${YELLOW}Generating patch from $base_branch...$target_branch${NC}"
+
+  # Show what will be included
+  show_diff_stats "$base_branch" "$target_branch"
+
+  echo
+  echo -e "${CYAN}Generating patch file: $output_file${NC}"
+
+  # Generate the patch
+  if git diff $base_branch...$target_branch >"$output_file"; then
+    local file_size=$(du -h "$output_file" | cut -f1)
+    echo -e "${GREEN}✓ Patch created successfully: $output_file (${file_size})${NC}"
+
+    # Show patch summary
+    echo -e "${CYAN}Patch Summary:${NC}"
+    echo "=============="
+    echo -e "Base branch: ${YELLOW}$base_branch${NC}"
+    echo -e "Target: ${YELLOW}$target_branch${NC}"
+    echo -e "Output: ${YELLOW}$output_file${NC}"
+    echo -e "Size: ${YELLOW}$file_size${NC}"
+
+    # Show how to apply the patch
+    echo
+    echo -e "${CYAN}To apply this patch:${NC}"
+    echo "  git apply $output_file"
+    echo "  # or"
+    echo "  patch -p1 < $output_file"
+
+  else
+    error_exit "Failed to generate patch"
+  fi
+}
+
+# Show usage
+show_usage() {
+  echo "Usage: $0 [BASE_BRANCH] [TARGET_BRANCH] [OUTPUT_FILE]"
+  echo ""
+  echo "Arguments:"
+  echo "  BASE_BRANCH    Base branch to compare from (default: develop)"
+  echo "  TARGET_BRANCH  Target branch/commit to compare to (default: HEAD)"
+  echo "  OUTPUT_FILE    Output patch file (optional, auto-generated if not provided)"
+  echo ""
+  echo "Examples:"
+  echo "  $0                                    # develop...HEAD"
+  echo "  $0 main                              # main...HEAD"
+  echo "  $0 develop feature-branch            # develop...feature-branch"
+  echo "  $0 main feature-branch my-patch.patch # Custom output file"
+  echo ""
+  echo "Options:"
+  echo "  -h, --help     Show this help message"
+  echo "  -s, --stats    Show only diff statistics (no patch file)"
+  echo "  -p, --preview  Show diff preview (no patch file)"
+}
+
+# Show diff preview
+show_preview() {
+  local base_branch="$1"
+  local target_branch="$2"
+
+  echo -e "${CYAN}Diff Preview:${NC}"
+  echo "=============="
+  git diff --stat $base_branch...$target_branch
+  echo
+  echo -e "${CYAN}First few changes:${NC}"
+  git diff $base_branch...$target_branch | head -50
+  echo -e "${YELLOW}... (showing first 50 lines)${NC}"
+}
+
+main() {
+  local base_branch="${1:-develop}"
+  local target_branch="${2:-HEAD}"
+  local output_file="$3"
+  local show_stats_only=false
+  local show_preview_only=false
+
+  # Parse options
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    -h | --help)
+      show_usage
+      exit 0
+      ;;
+    -s | --stats)
+      show_stats_only=true
+      shift
+      ;;
+    -p | --preview)
+      show_preview_only=true
+      shift
+      ;;
+    *)
+      # This is handled by the main logic
+      shift
+      ;;
+    esac
+  done
+
+  # Validate inputs
+  validate_inputs "$base_branch" "$target_branch"
+
+  # Handle different modes
+  if [ "$show_stats_only" = true ]; then
+    show_diff_stats "$base_branch" "$target_branch"
+    exit 0
+  fi
+
+  if [ "$show_preview_only" = true ]; then
+    show_preview "$base_branch" "$target_branch"
+    exit 0
+  fi
+
+  # Generate output filename if not provided
+  if [ -z "$output_file" ]; then
+    output_file=$(generate_output_filename "$base_branch" "$target_branch")
+  fi
+
+  # Check if output file already exists
+  if [ -f "$output_file" ]; then
+    print_warning "Output file '$output_file' already exists"
+    read -p "Overwrite? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      print_info "Operation cancelled"
+      exit 0
+    fi
+  fi
+
+  # Generate the patch
+  generate_patch "$base_branch" "$target_branch" "$output_file"
+}
+
+main "$@"
+
