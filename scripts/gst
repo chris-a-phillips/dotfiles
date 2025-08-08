@@ -1,0 +1,277 @@
+#!/bin/bash
+#
+# Smart git status or directory listing
+. _utils
+
+#######################################
+# Smart git status or directory listing
+# Shows git status if in a git repository, otherwise shows directory listing
+# Arguments:
+#   $@ - Optional arguments to pass to git status or directory listing
+# Outputs:
+#   Enhanced git status or directory listing with additional context
+#######################################
+
+# Parse logging arguments first
+remaining_args=$(parse_log_args "$@")
+set -- $remaining_args
+
+# Check if we're in a git repository
+is_git_repository() {
+    git rev-parse --git-dir >/dev/null 2>&1
+}
+
+# Show enhanced git status
+show_git_status() {
+    local status_args="$*"
+    local current_branch=$(get_current_branch)
+    local default_branch=$(get_default_branch)
+    
+    print_header "Git Status"
+    
+    # Show current branch and comparison
+    echo -e "📍 Branch: ${YELLOW}$current_branch${NC}"
+    if [ -n "$default_branch" ] && [ "$current_branch" != "$default_branch" ]; then
+        local ahead_behind=$(git rev-list --left-right --count $default_branch...HEAD 2>/dev/null)
+        if [ -n "$ahead_behind" ]; then
+            local ahead=$(echo $ahead_behind | cut -f1)
+            local behind=$(echo $ahead_behind | cut -f2)
+            echo -e "📊 Ahead: ${GREEN}$ahead${NC}, Behind: ${RED}$behind${NC} (vs $default_branch)"
+        fi
+    fi
+    
+    # Show remote status
+    local remote_branch=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)
+    if [ -n "$remote_branch" ]; then
+        echo -e "🌐 Remote: ${CYAN}$remote_branch${NC}"
+    fi
+    
+    # Show stash count
+    local stash_count=$(git stash list | wc -l)
+    if [ "$stash_count" -gt 0 ]; then
+        echo -e "📦 Stashes: ${YELLOW}$stash_count${NC}"
+    fi
+    
+    # Show recent commits
+    local recent_commits=$(git log --oneline -n 3 --no-merges 2>/dev/null)
+    if [ -n "$recent_commits" ]; then
+        print_header "Recent Commits"
+        echo "$recent_commits"
+    fi
+    
+    # Show the actual git status
+    print_header "Status"
+    if [ -n "$status_args" ]; then
+        git status $status_args
+    else
+        git status
+    fi
+    
+    # Show additional useful information
+    show_git_extras
+}
+
+# Show additional git information
+show_git_extras() {
+    # Show untracked files count
+    local untracked_count=$(git status --porcelain | grep '^??' | wc -l)
+    if [ "$untracked_count" -gt 0 ]; then
+        echo -e "\n📄 Untracked files: ${YELLOW}$untracked_count${NC}"
+    fi
+    
+    # Show modified files count
+    local modified_count=$(git status --porcelain | grep '^ M' | wc -l)
+    if [ "$modified_count" -gt 0 ]; then
+        echo -e "✏️  Modified files: ${YELLOW}$modified_count${NC}"
+    fi
+    
+    # Show staged files count
+    local staged_count=$(git status --porcelain | grep '^M ' | wc -l)
+    if [ "$staged_count" -gt 0 ]; then
+        echo -e "✅ Staged files: ${GREEN}$staged_count${NC}"
+    fi
+}
+
+# Show enhanced directory listing
+show_directory_listing() {
+    local listing_args="$*"
+    
+    print_header "Directory Listing"
+    echo -e "📁 Current directory: ${YELLOW}$(pwd)${NC}"
+    
+    # Check if we have exa available
+    if command_exists exa; then
+        info "Using exa for enhanced directory listing"
+        if [ -n "$listing_args" ]; then
+            exa $listing_args
+        else
+            exa --long --all --group --header --icons
+        fi
+    elif command_exists ls; then
+        info "Using ls for directory listing"
+        if [ -n "$listing_args" ]; then
+            ls $listing_args
+        else
+            ls -la
+        fi
+    else
+        error_exit "Neither exa nor ls found for directory listing"
+    fi
+    
+    # Show additional directory information
+    show_directory_extras
+}
+
+# Show additional directory information
+show_directory_extras() {
+    # Count files and directories
+    local file_count=$(find . -maxdepth 1 -type f | wc -l)
+    local dir_count=$(find . -maxdepth 1 -type d | wc -l)
+    local hidden_count=$(find . -maxdepth 1 -name ".*" | wc -l)
+    
+    echo -e "\n📊 Directory Info:"
+    echo -e "   Files: ${YELLOW}$file_count${NC}"
+    echo -e "   Directories: ${YELLOW}$dir_count${NC}"
+    echo -e "   Hidden items: ${YELLOW}$hidden_count${NC}"
+    
+    # Show directory size
+    if command_exists du; then
+        local dir_size=$(du -sh . 2>/dev/null | cut -f1)
+        if [ -n "$dir_size" ]; then
+            echo -e "   Size: ${YELLOW}$dir_size${NC}"
+        fi
+    fi
+    
+    # Check for common project files
+    local has_package_json=$(file_exists "package.json")
+    local has_pyproject_toml=$(file_exists "pyproject.toml")
+    local has_requirements_txt=$(file_exists "requirements.txt")
+    local has_gemfile=$(file_exists "Gemfile")
+    local has_cargo_toml=$(file_exists "Cargo.toml")
+    local has_go_mod=$(file_exists "go.mod")
+    
+    if [ "$has_package_json" = true ] || [ "$has_pyproject_toml" = true ] || [ "$has_requirements_txt" = true ] || [ "$has_gemfile" = true ] || [ "$has_cargo_toml" = true ] || [ "$has_go_mod" = true ]; then
+        echo -e "\n🔧 Project Type:"
+        [ "$has_package_json" = true ] && echo -e "   📦 Node.js project"
+        [ "$has_pyproject_toml" = true ] && echo -e "   🐍 Python project (pyproject.toml)"
+        [ "$has_requirements_txt" = true ] && echo -e "   🐍 Python project (requirements.txt)"
+        [ "$has_gemfile" = true ] && echo -e "   💎 Ruby project"
+        [ "$has_cargo_toml" = true ] && echo -e "   🦀 Rust project"
+        [ "$has_go_mod" = true ] && echo -e "   🐹 Go project"
+    fi
+}
+
+# Show usage
+show_usage() {
+    echo "Usage: $0 [OPTIONS] [GIT_STATUS_ARGS]"
+    echo ""
+    echo "Description:"
+    echo "  Shows git status if in a git repository, otherwise shows directory listing."
+    echo "  Automatically detects the context and provides enhanced output."
+    echo ""
+    echo "Git Repository Mode:"
+    echo "  Shows enhanced git status with branch info, remote status,"
+    echo "  stash count, recent commits, and detailed file status."
+    echo ""
+    echo "Directory Mode:"
+    echo "  Shows enhanced directory listing with file counts, sizes,"
+    echo "  and project type detection."
+    echo ""
+    echo "Options:"
+    echo "  -h, --help     Show this help message"
+    echo "  -v, --verbose  Show more detailed information"
+    echo "  -s, --short    Show short format (git status only)"
+    echo "  -p, --porcelain Show machine-readable format (git status only)"
+    echo ""
+    echo "Examples:"
+    echo "  $0                                    # Smart status/listing"
+    echo "  $0 --verbose                         # More detailed output"
+    echo "  $0 --short                           # Short git status"
+    echo "  $0 --porcelain                       # Machine-readable format"
+    echo "  $0 --long                            # Long directory listing"
+    echo ""
+    echo "Logging Options:"
+    echo "  --debug        Show debug messages"
+    echo "  --info         Show info messages"
+    echo "  --warn         Show warning messages"
+    echo "  --error        Show error messages only"
+    echo "  --quiet        Suppress all messages"
+}
+
+main() {
+    local verbose=false
+    local short_format=false
+    local porcelain_format=false
+    local git_args=""
+    local listing_args=""
+    
+    debug "Starting gst script"
+    info "Parsing arguments and setting up logging"
+    
+    # Parse options
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            -v|--verbose)
+                verbose=true
+                shift
+                ;;
+            -s|--short)
+                short_format=true
+                shift
+                ;;
+            -p|--porcelain)
+                porcelain_format=true
+                shift
+                ;;
+            --debug|--info|--warn|--error|--quiet)
+                # These are handled by parse_log_args
+                shift
+                ;;
+            *)
+                # Collect remaining arguments
+                if [ "$verbose" = true ]; then
+                    debug "Collecting argument: $1"
+                fi
+                git_args="$git_args $1"
+                listing_args="$listing_args $1"
+                shift
+                ;;
+        esac
+    done
+    
+    # Determine if we're in a git repository
+    debug "Checking if we're in a git repository"
+    if is_git_repository; then
+        info "Git repository detected"
+        
+        # Handle different git status formats
+        if [ "$short_format" = true ]; then
+            debug "Showing short git status"
+            git status --short $git_args
+        elif [ "$porcelain_format" = true ]; then
+            debug "Showing porcelain git status"
+            git status --porcelain $git_args
+        else
+            debug "Showing enhanced git status"
+            show_git_status $git_args
+        fi
+    else
+        info "Not in a git repository, showing directory listing"
+        
+        # Check if we have any useful commands for directory listing
+        if ! command_exists exa && ! command_exists ls; then
+            error_exit "No suitable directory listing command found (exa or ls)"
+        fi
+        
+        debug "Showing enhanced directory listing"
+        show_directory_listing $listing_args
+    fi
+    
+    info "gst completed successfully"
+}
+
+main "$@" 
