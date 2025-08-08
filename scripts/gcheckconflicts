@@ -1,0 +1,68 @@
+#!/bin/bash
+#
+# Check for branch conflicts
+. _utils
+
+#######################################
+# Script to check if changes from another branch accidentally made it into your current branch
+# Arguments:
+#   $1 - Other branch name to check against
+#   $2 - Base branch to compare from (default: develop)
+# Outputs:
+#   Shows files changed in both branches and potential conflicts
+#######################################
+
+main() {
+    local OTHER_BRANCH="$1"
+    local CURRENT_BRANCH=$(git branch --show-current)
+    local BASE_BRANCH="${2:-develop}"  # Default to develop if not specified
+
+    if [ -z "$OTHER_BRANCH" ]; then
+        error_exit "Usage: $0 <other-branch-name> [base-branch]\nExample: $0 OC-7091\nExample: $0 OC-7091 main"
+    fi
+
+    echo "🔍 Checking for conflicts between branches:"
+    echo "   Current branch: $CURRENT_BRANCH"
+    echo "   Other branch: $OTHER_BRANCH"
+    echo "   Base branch: $BASE_BRANCH"
+    echo
+
+    # Check if branches exist
+    if ! git show-ref --verify --quiet refs/heads/$OTHER_BRANCH && ! git show-ref --verify --quiet refs/remotes/origin/$OTHER_BRANCH; then
+        error_exit "Branch '$OTHER_BRANCH' not found locally or remotely"
+    fi
+
+    echo "📋 Files changed in $OTHER_BRANCH:"
+    git diff $BASE_BRANCH..$OTHER_BRANCH --name-only | sed 's/^/   /'
+    echo
+
+    echo "📋 Files changed in $CURRENT_BRANCH:"
+    git diff $BASE_BRANCH --name-only | sed 's/^/   /'
+    echo
+
+    echo "⚠️  Common files (potential conflicts):"
+    local COMMON_FILES=$(comm -12 <(git diff $BASE_BRANCH..$OTHER_BRANCH --name-only | sort) <(git diff $BASE_BRANCH --name-only | sort))
+
+    if [ -z "$COMMON_FILES" ]; then
+        echo "   ✅ No common files found - no conflicts!"
+    else
+        echo "$COMMON_FILES" | sed 's/^/   🔴 /'
+        echo
+        
+        echo "🔍 Detailed analysis of common files:"
+        echo "$COMMON_FILES" | while read -r file; do
+            echo
+            echo "=== $file ==="
+            echo "Changes in $OTHER_BRANCH vs $BASE_BRANCH:"
+            git diff $BASE_BRANCH..$OTHER_BRANCH -- "$file" | head -20
+            echo "..."
+            echo
+            echo "Changes in $CURRENT_BRANCH vs $BASE_BRANCH:"
+            git diff $BASE_BRANCH -- "$file" | head -20
+            echo "..."
+            echo "----------------------------------------"
+        done
+    fi
+}
+
+main "$@"

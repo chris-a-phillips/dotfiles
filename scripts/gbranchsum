@@ -1,0 +1,47 @@
+#!/bin/bash
+#
+# Branch summary analysis
+. _utils
+
+#######################################
+# Quick script to analyze what changes are in your current branch
+# Arguments:
+#   $1 - Base branch to compare against (default: develop)
+# Outputs:
+#   Shows files changed, stats, and recent commits
+#######################################
+
+main() {
+    local BASE_BRANCH="${1:-develop}"
+    local CURRENT_BRANCH=$(git branch --show-current)
+
+    echo "📊 Branch Summary: $CURRENT_BRANCH"
+    echo "   Base: $BASE_BRANCH"
+    echo
+
+    echo "📁 Files changed:"
+    git diff $BASE_BRANCH --name-status | while read -r status file; do
+        case $status in
+            A) echo "   ➕ Added: $file" ;;
+            M) echo "   ✏️  Modified: $file" ;;
+            D) echo "   ❌ Deleted: $file" ;;
+            R*) echo "   🔄 Renamed: $file" ;;
+            *) echo "   ❓ $status: $file" ;;
+        esac
+    done
+
+    echo
+    echo "📈 Stats:"
+    git diff $BASE_BRANCH --stat
+
+    echo
+    echo "💾 Recent commits:"
+    git log $BASE_BRANCH..HEAD --oneline --max-count=10
+
+    echo
+    echo "🔍 To see detailed changes:"
+    echo "   git diff $BASE_BRANCH"
+    echo "   git diff $BASE_BRANCH -- specific/file.tsx"
+}
+
+main "$@"
