@@ -1,110 +1,169 @@
 #!/bin/bash
-#
-# Utility functions for bash scripts
 
-#######################################
-# Utility functions for bash scripts
-# Arguments:
-#   None
-# Outputs:
-#   None
-#######################################
+# Performance optimizations
+# Cache expensive operations
+_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
+mkdir -p "$_CACHE_DIR"
 
-# Color definitions
+# Cache git operations for 5 seconds
+_GIT_CACHE_FILE="$_CACHE_DIR/git_cache"
+_GIT_CACHE_TIMEOUT=5
+
+# Check if cache is valid
+_is_cache_valid() {
+    local cache_file="$1"
+    local timeout="$2"
+    [ -f "$cache_file" ] && [ $(($(date +%s) - $(stat -f %m "$cache_file" 2>/dev/null || echo 0))) -lt "$timeout" ]
+}
+
+# Cache git operations
+_cache_git_operation() {
+    local operation="$1"
+    local cache_file="$_GIT_CACHE_FILE.$operation"
+    
+    if _is_cache_valid "$cache_file" "$_GIT_CACHE_TIMEOUT"; then
+        cat "$cache_file"
+    else
+        local result
+        case "$operation" in
+            "current_branch")
+                result=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null)
+                ;;
+            "default_branch")
+                result=$(git config --get init.defaultBranch 2>/dev/null || git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+                ;;
+            "is_repo")
+                result=$(git rev-parse --git-dir >/dev/null 2>&1 && echo "true" || echo "false")
+                ;;
+        esac
+        echo "$result" > "$cache_file"
+        echo "$result"
+    fi
+}
+
+# Color definitions (optimized)
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-BBLUE='\033[1;34m'
-MAGENTA='\033[0;35m'
 CYAN='\033[0;36m'
-WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 
-# Print functions with colors
-print_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
+# Check if terminal supports colors
+if [ -t 1 ]; then
+    ncolors=$(tput colors)
+    if [ -n "$ncolors" ] && [ $ncolors -ge 8 ]; then
+        # Colors are supported
+        :
+    else
+        # Colors are not supported, disable them
+        RED=''
+        GREEN=''
+        YELLOW=''
+        BLUE=''
+        CYAN=''
+        NC=''
+    fi
+else
+    # Not a terminal, disable colors
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    CYAN=''
+    NC=''
+fi
 
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-print_header() {
-    echo -e "\n${MAGENTA}=== $1 ===${NC}"
-}
-
-# Error handling function
+# Error handling
 error_exit() {
-    echo -e "${RED}ERROR: $1${NC}" >&2
+    echo -e "${RED}[ERROR]${NC} $*" >&2
     exit 1
 }
 
-# Check if command exists
+# Print functions
+print_info() {
+    echo -e "${BLUE}[INFO]${NC} $*"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $*"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $*"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $*"
+}
+
+print_header() {
+    echo -e "\n${CYAN}=== $* ===${NC}"
+}
+
+# Check if command exists (cached)
+_command_cache_file="$_CACHE_DIR/command_cache"
+_command_cache_timeout=300  # 5 minutes
+
 command_exists() {
-    command -v "$1" >/dev/null 2>&1
+    local cmd="$1"
+    local cache_key="cmd_${cmd//[^a-zA-Z0-9]/_}"
+    local cache_file="$_command_cache_file.$cache_key"
+    
+    if _is_cache_valid "$cache_file" "$_command_cache_timeout"; then
+        [ "$(cat "$cache_file")" = "true" ]
+    else
+        if command -v "$cmd" >/dev/null 2>&1; then
+            echo "true" > "$cache_file"
+            return 0
+        else
+            echo "false" > "$cache_file"
+            return 1
+        fi
+    fi
 }
 
-# Check if file exists and is readable
+# File and directory operations
 file_exists() {
-    [ -f "$1" ] && [ -r "$1" ]
+    [ -f "$1" ]
 }
 
-# Check if directory exists
 dir_exists() {
     [ -d "$1" ]
 }
 
-# Safe directory change
-safe_cd() {
-    if [ -d "$1" ]; then
-        cd "$1" || error_exit "Failed to change to directory: $1"
-    else
-        error_exit "Directory does not exist: $1"
-    fi
-}
-
-# Get absolute path
+# Get absolute path (optimized)
 get_abs_path() {
     local path="$1"
     if [ -d "$path" ]; then
         (cd "$path" && pwd)
     else
-        (cd "$(dirname "$path")" && pwd)/$(basename "$path")
+        echo "$(cd "$(dirname "$path")" && pwd)/$(basename "$path")"
     fi
 }
 
-# Check if we're in a git repository
+# Check if we're in a git repository (cached)
 is_git_repo() {
-    git rev-parse --git-dir >/dev/null 2>&1
+    [ "$(_cache_git_operation "is_repo")" = "true" ]
 }
 
-# Get current git branch
+# Get current git branch (cached)
 get_current_branch() {
     if is_git_repo; then
-        git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null
+        _cache_git_operation "current_branch"
     else
         echo ""
     fi
 }
 
-# Get default branch (main, master, or configured)
+# Get default branch (cached)
 get_default_branch() {
-    # Try to get the default branch from git config
-    local default_branch=$(git config --get init.defaultBranch 2>/dev/null)
-    
-    # If not set, try to detect from remote
-    if [ -z "$default_branch" ]; then
-        default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+    if ! is_git_repo; then
+        echo ""
+        return
     fi
+    
+    local default_branch=$(_cache_git_operation "default_branch")
     
     # If still not found, check if main or master exists
     if [ -z "$default_branch" ]; then
@@ -182,22 +241,14 @@ get_dir_size() {
 
 # Count files in directory
 count_files() {
-    local dir="$1"
-    if [ -d "$dir" ]; then
-        find "$dir" -type f | wc -l
-    else
-        echo "0"
-    fi
+    local dir="${1:-.}"
+    find "$dir" -maxdepth 1 -type f | wc -l
 }
 
-# Count directories in directory
+# Count directories
 count_dirs() {
-    local dir="$1"
-    if [ -d "$dir" ]; then
-        find "$dir" -type d | wc -l
-    else
-        echo "0"
-    fi
+    local dir="${1:-.}"
+    find "$dir" -maxdepth 1 -type d | wc -l
 }
 
 # Get file extension
@@ -212,222 +263,152 @@ get_filename_without_extension() {
     echo "${file%.*}"
 }
 
-# Get basename of file
+# Get basename
 get_basename() {
-    local file="$1"
-    basename "$file"
+    local path="$1"
+    basename "$path"
 }
 
-# Get directory name
+# Get dirname
 get_dirname() {
-    local file="$1"
-    dirname "$file"
+    local path="$1"
+    dirname "$path"
 }
 
-# Check if string is empty
+# String manipulation
 is_empty() {
     [ -z "$1" ]
 }
 
-# Check if string is not empty
 is_not_empty() {
     [ -n "$1" ]
 }
 
-# Check if string contains substring
 contains() {
-    local string="$1"
-    local substring="$2"
-    [[ "$string" == *"$substring"* ]]
+    [[ "$1" == *"$2"* ]]
 }
 
-# Check if string starts with prefix
 starts_with() {
-    local string="$1"
-    local prefix="$2"
-    [[ "$string" == "$prefix"* ]]
+    [[ "$1" == "$2"* ]]
 }
 
-# Check if string ends with suffix
 ends_with() {
-    local string="$1"
-    local suffix="$2"
-    [[ "$string" == *"$suffix" ]]
+    [[ "$1" == *"$2" ]]
 }
 
-# Convert string to lowercase
 to_lowercase() {
     echo "$1" | tr '[:upper:]' '[:lower:]'
 }
 
-# Convert string to uppercase
 to_uppercase() {
     echo "$1" | tr '[:lower:]' '[:upper:]'
 }
 
-# Trim whitespace from string
 trim() {
-    local string="$1"
-    echo "$string" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+    echo "$1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
-# Generate random string
+# Time and generation functions
 generate_random_string() {
     local length="${1:-8}"
-    cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w "$length" | head -n 1
+    openssl rand -base64 "$length" | tr -d "=+/" | cut -c1-"$length"
 }
 
-# Generate timestamp
 generate_timestamp() {
     date +%Y%m%d_%H%M%S
 }
 
-# Generate date
 generate_date() {
     date +%Y-%m-%d
 }
 
-# Generate time
 generate_time() {
     date +%H:%M:%S
 }
 
-# Check if running on macOS
+# System detection
 is_macos() {
     [[ "$OSTYPE" == "darwin"* ]]
 }
 
-# Check if running on Linux
 is_linux() {
     [[ "$OSTYPE" == "linux-gnu"* ]]
 }
 
-# Check if running on Windows
 is_windows() {
     [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]
 }
 
-# Get OS name
 get_os_name() {
-    if is_macos; then
-        echo "macOS"
-    elif is_linux; then
-        echo "Linux"
-    elif is_windows; then
-        echo "Windows"
-    else
-        echo "Unknown"
-    fi
+    uname -s
 }
 
-# Check if user is root/admin
 is_root() {
-    [ "$EUID" -eq 0 ]
+    [ "$(id -u)" -eq 0 ]
 }
 
-# Check if user has sudo privileges
 has_sudo() {
-    sudo -n true 2>/dev/null
+    command_exists sudo && sudo -n true 2>/dev/null
 }
 
-# Get user's home directory
 get_home_dir() {
     echo "$HOME"
 }
 
-# Get current working directory
 get_cwd() {
     pwd
 }
 
-# Get script directory
 get_script_dir() {
-    cd "$(dirname "${BASH_SOURCE[0]}")" && pwd
+    dirname "$(readlink -f "$0")"
 }
 
-# Get script name
 get_script_name() {
-    basename "${BASH_SOURCE[0]}"
+    basename "$0"
 }
 
-# Confirm action with user
+# User interaction
 confirm_action() {
-    local message="$1"
-    local default="${2:-N}"
+    local prompt="$1"
+    local default="${2:-n}"
     
-    if [ "$default" = "Y" ]; then
-        read -p "$message (Y/n): " -n 1 -r
+    if [ "$default" = "y" ]; then
+        read -p "$prompt (Y/n): " -n 1 -r
+        echo
+        [[ $REPLY =~ ^[Nn]$ ]] && return 1
     else
-        read -p "$message (y/N): " -n 1 -r
-    fi
-    echo
-    
-    if [ "$default" = "Y" ]; then
-        [[ ! $REPLY =~ ^[Nn]$ ]]
-    else
+        read -p "$prompt (y/N): " -n 1 -r
+        echo
         [[ $REPLY =~ ^[Yy]$ ]]
     fi
 }
 
-# Show progress bar
 show_progress() {
-    local current="$1"
-    local total="$2"
-    local width="${3:-50}"
-    
-    local percentage=$((current * 100 / total))
-    local filled=$((percentage * width / 100))
-    local empty=$((width - filled))
-    
-    printf "\r["
-    printf "%${filled}s" | tr ' ' '#'
-    printf "%${empty}s" | tr ' ' '-'
-    printf "] %d%%" "$percentage"
-    
-    if [ "$current" -eq "$total" ]; then
-        echo
-    fi
+    local message="$1"
+    echo -n "$message"
 }
-
-# Check if terminal supports colors
-supports_colors() {
-    [ -t 1 ] && [ -n "$TERM" ] && [[ "$TERM" != "dumb" ]]
-}
-
-# Disable colors if terminal doesn't support them
-if ! supports_colors; then
-    RED=''
-    GREEN=''
-    YELLOW=''
-    BLUE=''
-    BBLUE=''
-    MAGENTA=''
-    CYAN=''
-    WHITE=''
-    NC=''
-fi
 
 # Logging functions
-debug() { 
-    if [ -n "${debug:-}" ]; then 
+debug() {
+    if [ -n "${debug:-}" ]; then
         echo -e "${CYAN}[DEBUG]${NC} $0: $*" >&2
     fi
 }
 
-info() { 
-    if [ -n "${info:-}" ]; then 
+info() {
+    if [ -n "${info:-}" ]; then
         echo -e "${BLUE}[INFO]${NC} $0: $*" >&2
     fi
 }
 
-warn() { 
-    if [ -n "${warn:-}" ]; then 
+warn() {
+    if [ -n "${warn:-}" ]; then
         echo -e "${YELLOW}[WARN]${NC} $0: $*" >&2
     fi
 }
 
-error() { 
-    if [ -n "${error:-}" ]; then 
+error() {
+    if [ -n "${error:-}" ]; then
         echo -e "${RED}[ERROR]${NC} $0: $*" >&2
     fi
 }
@@ -435,22 +416,22 @@ error() {
 # Handle function for setting log levels
 handle() {
     case $1 in
-        --debug) 
+        --debug)
             debug=echo
             info=echo
             warn=echo
             error=echo
             ;;
-        --info)  
+        --info)
             info=echo
             warn=echo
             error=echo
             ;;
-        --warn)  
+        --warn)
             warn=echo
             error=echo
             ;;
-        --error) 
+        --error)
             error=echo
             ;;
         --quiet)
@@ -460,7 +441,7 @@ handle() {
             warn=
             error=
             ;;
-        *) 
+        *)
             echo "$0: unknown option '$1' -- aborting" >&2
             exit 127
             ;;
