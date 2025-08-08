@@ -1,11 +1,9 @@
 #!/bin/bash
 #
-# All colors, error handling, etc imported by other scripts
-
-
+# Utility functions for bash scripts
 
 #######################################
-# All colors, error handling, etc imported by other scripts
+# Utility functions for bash scripts
 # Arguments:
 #   None
 # Outputs:
@@ -23,6 +21,27 @@ CYAN='\033[0;36m'
 WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 
+# Print functions with colors
+print_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_header() {
+    echo -e "\n${MAGENTA}=== $1 ===${NC}"
+}
+
 # Error handling function
 error_exit() {
     echo -e "${RED}ERROR: $1${NC}" >&2
@@ -34,12 +53,32 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Check if file exists and is readable
+file_exists() {
+    [ -f "$1" ] && [ -r "$1" ]
+}
+
+# Check if directory exists
+dir_exists() {
+    [ -d "$1" ]
+}
+
 # Safe directory change
 safe_cd() {
     if [ -d "$1" ]; then
         cd "$1" || error_exit "Failed to change to directory: $1"
     else
         error_exit "Directory does not exist: $1"
+    fi
+}
+
+# Get absolute path
+get_abs_path() {
+    local path="$1"
+    if [ -d "$path" ]; then
+        (cd "$path" && pwd)
+    else
+        (cd "$(dirname "$path")" && pwd)/$(basename "$path")
     fi
 }
 
@@ -82,42 +121,366 @@ get_default_branch() {
     echo "$default_branch"
 }
 
-# debug () { ${debug-:} "$0: $@" >&2; }
-# info () {  ${info-:}  "$0: $@" >&2; }
-# warn () {  ${warn-:}  "$0: $@" >&2; }
-# error () { ${error-:} "$0: $@" >&2; }
+# Check if branch exists
+branch_exists() {
+    local branch="$1"
+    git show-ref --verify --quiet refs/heads/$branch || git show-ref --verify --quiet refs/remotes/origin/$branch
+}
 
+# Get git status
+get_git_status() {
+    if is_git_repo; then
+        git status --porcelain
+    else
+        echo ""
+    fi
+}
 
+# Check if git has uncommitted changes
+has_uncommitted_changes() {
+    if is_git_repo; then
+        git status --porcelain | grep -q .
+    else
+        false
+    fi
+}
 
-# handle() {
-#     case $1 in
-#     --debug) debug=echo; info=echo;  warn=echo;  error=1;;
-#     --info)  info=echo;  warn=echo;  error=1;;
-#     --warn)  warn=echo;  error=echo;;
-#     --error) error=echo;;
-#     *) echo "$0: unknown option '$1' -- aborting" >&2
-#         exit 127;;
-#     esac
-# }
+# Check if git has unpushed commits
+has_unpushed_commits() {
+    if is_git_repo; then
+        local current_branch=$(get_current_branch)
+        local default_branch=$(get_default_branch)
+        if [ -n "$default_branch" ] && [ "$current_branch" = "$default_branch" ]; then
+            git rev-list HEAD...origin/$default_branch --count 2>/dev/null | grep -q -v "^0$"
+        else
+            false
+        fi
+    else
+        false
+    fi
+}
 
-# debug () { ${debug-:} "$0: $@" >&2; }
-# info () {  ${info-:}  "$0: $@" >&2; }
-# warn () {  ${warn-:}  "$0: $@" >&2; }
-# error () { ${error-:} "$0: $@" >&2; }
+# Get file size in human readable format
+get_file_size() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        du -h "$file" | cut -f1
+    else
+        echo "0B"
+    fi
+}
 
-# case $1 in
-#   --debug) debug=echo; info=echo;  warn=echo;  error=1;;
-#   --info)  info=echo;  warn=echo;  error=1;;
-#   --warn)  warn=echo;  error=echo;;
-#   --error) error=echo;;
-#   -*) echo "$0: unknown option '$1' -- aborting" >&2
-#       exit 127;;
-# esac
-# shift
+# Get directory size in human readable format
+get_dir_size() {
+    local dir="$1"
+    if [ -d "$dir" ]; then
+        du -sh "$dir" | cut -f1
+    else
+        echo "0B"
+    fi
+}
 
-# debug here we go
-# info starting
-# echo "Hello world"
-# warn the end is nigh
-# echo "Hi there"
-# error we die here
+# Count files in directory
+count_files() {
+    local dir="$1"
+    if [ -d "$dir" ]; then
+        find "$dir" -type f | wc -l
+    else
+        echo "0"
+    fi
+}
+
+# Count directories in directory
+count_dirs() {
+    local dir="$1"
+    if [ -d "$dir" ]; then
+        find "$dir" -type d | wc -l
+    else
+        echo "0"
+    fi
+}
+
+# Get file extension
+get_file_extension() {
+    local file="$1"
+    echo "${file##*.}"
+}
+
+# Get filename without extension
+get_filename_without_extension() {
+    local file="$1"
+    echo "${file%.*}"
+}
+
+# Get basename of file
+get_basename() {
+    local file="$1"
+    basename "$file"
+}
+
+# Get directory name
+get_dirname() {
+    local file="$1"
+    dirname "$file"
+}
+
+# Check if string is empty
+is_empty() {
+    [ -z "$1" ]
+}
+
+# Check if string is not empty
+is_not_empty() {
+    [ -n "$1" ]
+}
+
+# Check if string contains substring
+contains() {
+    local string="$1"
+    local substring="$2"
+    [[ "$string" == *"$substring"* ]]
+}
+
+# Check if string starts with prefix
+starts_with() {
+    local string="$1"
+    local prefix="$2"
+    [[ "$string" == "$prefix"* ]]
+}
+
+# Check if string ends with suffix
+ends_with() {
+    local string="$1"
+    local suffix="$2"
+    [[ "$string" == *"$suffix" ]]
+}
+
+# Convert string to lowercase
+to_lowercase() {
+    echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+# Convert string to uppercase
+to_uppercase() {
+    echo "$1" | tr '[:lower:]' '[:upper:]'
+}
+
+# Trim whitespace from string
+trim() {
+    local string="$1"
+    echo "$string" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+}
+
+# Generate random string
+generate_random_string() {
+    local length="${1:-8}"
+    cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w "$length" | head -n 1
+}
+
+# Generate timestamp
+generate_timestamp() {
+    date +%Y%m%d_%H%M%S
+}
+
+# Generate date
+generate_date() {
+    date +%Y-%m-%d
+}
+
+# Generate time
+generate_time() {
+    date +%H:%M:%S
+}
+
+# Check if running on macOS
+is_macos() {
+    [[ "$OSTYPE" == "darwin"* ]]
+}
+
+# Check if running on Linux
+is_linux() {
+    [[ "$OSTYPE" == "linux-gnu"* ]]
+}
+
+# Check if running on Windows
+is_windows() {
+    [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]
+}
+
+# Get OS name
+get_os_name() {
+    if is_macos; then
+        echo "macOS"
+    elif is_linux; then
+        echo "Linux"
+    elif is_windows; then
+        echo "Windows"
+    else
+        echo "Unknown"
+    fi
+}
+
+# Check if user is root/admin
+is_root() {
+    [ "$EUID" -eq 0 ]
+}
+
+# Check if user has sudo privileges
+has_sudo() {
+    sudo -n true 2>/dev/null
+}
+
+# Get user's home directory
+get_home_dir() {
+    echo "$HOME"
+}
+
+# Get current working directory
+get_cwd() {
+    pwd
+}
+
+# Get script directory
+get_script_dir() {
+    cd "$(dirname "${BASH_SOURCE[0]}")" && pwd
+}
+
+# Get script name
+get_script_name() {
+    basename "${BASH_SOURCE[0]}"
+}
+
+# Confirm action with user
+confirm_action() {
+    local message="$1"
+    local default="${2:-N}"
+    
+    if [ "$default" = "Y" ]; then
+        read -p "$message (Y/n): " -n 1 -r
+    else
+        read -p "$message (y/N): " -n 1 -r
+    fi
+    echo
+    
+    if [ "$default" = "Y" ]; then
+        [[ ! $REPLY =~ ^[Nn]$ ]]
+    else
+        [[ $REPLY =~ ^[Yy]$ ]]
+    fi
+}
+
+# Show progress bar
+show_progress() {
+    local current="$1"
+    local total="$2"
+    local width="${3:-50}"
+    
+    local percentage=$((current * 100 / total))
+    local filled=$((percentage * width / 100))
+    local empty=$((width - filled))
+    
+    printf "\r["
+    printf "%${filled}s" | tr ' ' '#'
+    printf "%${empty}s" | tr ' ' '-'
+    printf "] %d%%" "$percentage"
+    
+    if [ "$current" -eq "$total" ]; then
+        echo
+    fi
+}
+
+# Check if terminal supports colors
+supports_colors() {
+    [ -t 1 ] && [ -n "$TERM" ] && [[ "$TERM" != "dumb" ]]
+}
+
+# Disable colors if terminal doesn't support them
+if ! supports_colors; then
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    BBLUE=''
+    MAGENTA=''
+    CYAN=''
+    WHITE=''
+    NC=''
+fi
+
+# Logging functions
+debug() { 
+    if [ -n "${debug:-}" ]; then 
+        echo -e "${CYAN}[DEBUG]${NC} $0: $*" >&2
+    fi
+}
+
+info() { 
+    if [ -n "${info:-}" ]; then 
+        echo -e "${BLUE}[INFO]${NC} $0: $*" >&2
+    fi
+}
+
+warn() { 
+    if [ -n "${warn:-}" ]; then 
+        echo -e "${YELLOW}[WARN]${NC} $0: $*" >&2
+    fi
+}
+
+error() { 
+    if [ -n "${error:-}" ]; then 
+        echo -e "${RED}[ERROR]${NC} $0: $*" >&2
+    fi
+}
+
+# Handle function for setting log levels
+handle() {
+    case $1 in
+        --debug) 
+            debug=echo
+            info=echo
+            warn=echo
+            error=echo
+            ;;
+        --info)  
+            info=echo
+            warn=echo
+            error=echo
+            ;;
+        --warn)  
+            warn=echo
+            error=echo
+            ;;
+        --error) 
+            error=echo
+            ;;
+        --quiet)
+            # Disable all logging
+            debug=
+            info=
+            warn=
+            error=
+            ;;
+        *) 
+            echo "$0: unknown option '$1' -- aborting" >&2
+            exit 127
+            ;;
+    esac
+}
+
+# Parse command line arguments for logging levels
+# Usage: parse_log_args "$@"
+parse_log_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --debug|--info|--warn|--error|--quiet)
+                handle "$1"
+                shift
+                ;;
+            *)
+                # Return remaining arguments
+                echo "$*"
+                break
+                ;;
+        esac
+    done
+}

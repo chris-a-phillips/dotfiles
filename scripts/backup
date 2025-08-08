@@ -11,10 +11,14 @@
 #   backup_file.tar.gz
 #######################################
 
+# Parse logging arguments first
+remaining_args=$(parse_log_args "$@")
+set -- $remaining_args
+
 # Create backup filename
 create_backup_name() {
     local base_name="${1:-backup}"
-    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local timestamp=$(generate_timestamp)
     echo "${base_name}_${timestamp}"
 }
 
@@ -30,31 +34,82 @@ create_backup() {
     local backup_name="$1"
     local backup_file="${backup_name}.tar.gz"
     
-    echo -e "${YELLOW}Creating backup: $backup_file${NC}"
+    info "Creating backup: $backup_file"
     
     # Create tar archive with gzip compression
     if tar -czf "$backup_file" --exclude='*.tar.gz' --exclude='.git' --exclude='node_modules' --exclude='__pycache__' .; then
-        local size=$(du -h "$backup_file" | cut -f1)
-        echo -e "${GREEN}Backup created successfully: $backup_file (${size})${NC}"
+        local size=$(get_file_size "$backup_file")
+        print_success "Backup created successfully: $backup_file (${size})"
         
         # Show backup location
-        echo -e "${CYAN}Backup location: $(pwd)/$backup_file${NC}"
+        local backup_path=$(get_abs_path "$backup_file")
+        info "Backup location: $backup_path"
+        
+        # Show backup details
+        print_header "Backup Details"
+        echo -e "File: ${YELLOW}$backup_file${NC}"
+        echo -e "Size: ${YELLOW}$size${NC}"
+        echo -e "Path: ${YELLOW}$backup_path${NC}"
+        echo -e "Date: ${YELLOW}$(generate_date) $(generate_time)${NC}"
+        
     else
         error_exit "Failed to create backup"
     fi
 }
 
-# Main function
+# Show usage
+show_usage() {
+    echo "Usage: $0 [BACKUP_NAME] [OPTIONS]"
+    echo ""
+    echo "Arguments:"
+    echo "  BACKUP_NAME    Optional name for the backup (default: backup)"
+    echo ""
+    echo "Examples:"
+    echo "  $0                                    # Create backup with default name"
+    echo "  $0 my-project                        # Create backup with custom name"
+    echo "  $0 project-backup                    # Create backup with custom name"
+    echo ""
+    echo "Logging Options:"
+    echo "  --debug        Show debug messages"
+    echo "  --info         Show info messages"
+    echo "  --warn         Show warning messages"
+    echo "  --error        Show error messages only"
+    echo "  --quiet        Suppress all messages"
+}
+
 main() {
+    local backup_name="$1"
+    
+    debug "Starting backup script"
+    info "Parsing arguments and setting up logging"
+    
+    # Parse options
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            *)
+                # This is handled by the main logic
+                shift
+                ;;
+        esac
+    done
+    
     # Check prerequisites
+    debug "Checking prerequisites"
     check_tar
     
     # Get backup name from argument or create default
-    local backup_name=$(create_backup_name "$1")
+    local final_backup_name=$(create_backup_name "$backup_name")
+    debug "Using backup name: $final_backup_name"
     
     # Create backup
-    create_backup "$backup_name"
+    debug "Creating backup"
+    create_backup "$final_backup_name"
+    
+    info "Backup completed successfully"
 }
 
-# Execute main with arguments
 main "$@"
