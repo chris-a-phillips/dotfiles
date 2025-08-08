@@ -65,21 +65,6 @@ alias gundo="git reset HEAD~1 --mixed"              # Git undo last commit
 alias gamend="git commit --amend -m"                # Git amend last commit
 alias gunstage="git restore --staged"               # Git unstage changes
 alias gshove="!git push origin HEAD"                # Git push current branch
-alias greview='
-# Git review changes in branch from main, develop, or master
-if git rev-parse --verify --quiet main >/dev/null; then
-    echo "Comparing against main"
-    git diff main...HEAD
-elif git rev-parse --verify --quiet develop >/dev/null; then
-    echo "Comparing against develop"
-    git diff develop...HEAD
-elif git rev-parse --verify --quiet master >/dev/null; then
-    echo "Comparing against master"
-    git diff master...HEAD
-else
-    echo "Error: No main, develop, or master branch found"
-fi
-'
 alias gnuke="git reset --hard"                      # Git reset hard
 alias gdelete="git branch -D"                        # Git delete branch
 alias ga="git add"                                   # Git add
