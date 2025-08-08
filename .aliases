@@ -51,7 +51,6 @@ alias fcd="cd \$(find * -type d | fzf)"            # Fuzzy directory changer
 alias ffcd="cd ~ && cd \$(find * -type d | fzf)"   # Fuzzy directory changer from home directory
 
 # Git Commands
-alias gst='git rev-parse --git-dir > /dev/null 2>&1 && git status || exa'  # Git status or directory listing if not in a git repo
 alias gc="git commit"                               # Git commit
 alias gcm="git commit -m"                           # Git commit with message
 alias gco="git checkout"                            # Git checkout

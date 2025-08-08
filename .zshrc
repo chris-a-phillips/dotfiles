@@ -10,15 +10,10 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # -------------------------------
-# Paths and Environment Variables
+# Optimized Paths and Environment Variables
 # -------------------------------
-# Standard path setup with custom directories
-export PATH=$HOME/bin:/usr/local/bin:$PATH
-export PATH=/opt/homebrew/bin:$PATH
-export PATH="$HOME/.dotfiles/scripts:$PATH"
-export PATH="/Applications/Alacritty.app/Contents/MacOS:$PATH"
-export LOCAL="$HOME/.local"
-export PATH="$LOCAL/bin:$PATH"
+# Combine all PATH additions into a single operation
+export PATH="$HOME/bin:/usr/local/bin:/opt/homebrew/bin:$HOME/.dotfiles/scripts:/Applications/Alacritty.app/Contents/MacOS:$HOME/.local/bin:$PATH"
 
 # Set repository path for easy access
 export SOURCE_REPO_PATH="/Users/chris.phillips/environment/dim/draw/integration-pipelines"
@@ -30,7 +25,7 @@ export LANG=en_US.UTF-8
 export EDITOR=nvim
 
 # -------------------------------
-# Zsh Aliases
+# Zsh Aliases (Fast Loading)
 # -------------------------------
 # Load custom aliases from .dotfiles
 if [ -f ~/.dotfiles/.aliases ]; then
@@ -45,7 +40,6 @@ bindkey '^R' history-incremental-search-backward
 # Bind ctrl+p for navigating up history
 bindkey '^P' up-history
 
-
 # -------------------------------
 # Theme and Prompt Customization
 # -------------------------------
@@ -57,23 +51,36 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # -------------------------------
-# Plugin Initializations
+# Lazy Loading for Heavy Components
 # -------------------------------
-# NVM (Node Version Manager) setup
-export NVM_DIR="$HOME/.nvm"
-[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
-[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+# Lazy load NVM (Node Version Manager) - only when node/npm is used
+nvm() {
+  unset -f nvm
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
+  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+  nvm "$@"
+}
 
-# Pyenv setup for managing Python versions
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+# Lazy load pyenv - only when python is used
+pyenv() {
+  unset -f pyenv
+  export PYENV_ROOT="$HOME/.pyenv"
+  [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+  eval "$(pyenv init -)"
+  pyenv "$@"
+}
 
+# Lazy load direnv - only when entering directories with .envrc
+direnv() {
+  unset -f direnv
+  eval "$(direnv hook zsh)"
+  direnv "$@"
+}
 
-# Direnv initialization for environment-specific configurations
-# eval "$(direnv hook zsh)"
-
+# -------------------------------
+# History Configuration
+# -------------------------------
 # History file setup
 HISTFILE=~/.zsh_history
 HISTSIZE=10000
