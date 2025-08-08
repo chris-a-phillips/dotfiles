@@ -45,14 +45,6 @@ bindkey '^R' history-incremental-search-backward
 # Bind ctrl+p for navigating up history
 bindkey '^P' up-history
 
-# -------------------------------
-# Functions
-# -------------------------------
-# Create and navigate to a new directory
-mkcd() {
-    mkdir -p "${1}"
-    cd "${1}"
-}
 
 # -------------------------------
 # Theme and Prompt Customization
@@ -78,28 +70,9 @@ export PYENV_ROOT="$HOME/.pyenv"
 eval "$(pyenv init -)"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-# ASDF version manager
-# . /opt/homebrew/opt/asdf/libexec/asdf.sh
-
-# Conda initialization
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/chris.phillips/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/chris.phillips/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/Users/chris.phillips/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/Users/chris.phillips/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
 
 # Direnv initialization for environment-specific configurations
 # eval "$(direnv hook zsh)"
-
-# Custom function path
-fpath+=${ZDOTDIR:-~}/.zsh_functions
 
 # History file setup
 HISTFILE=~/.zsh_history
