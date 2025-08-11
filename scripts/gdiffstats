@@ -1,0 +1,281 @@
+#!/bin/bash
+#
+# Show git diff statistics
+. _utils
+
+#######################################
+# Show git diff statistics with enhanced features
+# Arguments:
+#   $1 - Base branch (default: develop)
+#   $2 - Target branch/commit (default: HEAD)
+# Outputs:
+#   Shows detailed diff statistics and generates patch file
+#######################################
+
+# Parse logging arguments first
+remaining_args=$(parse_log_args "$@")
+set -- $remaining_args
+
+# Validate git repository and branches
+validate_inputs() {
+    local base_branch="$1"
+    local target_branch="$2"
+    
+    # Check if we're in a git repository
+    if ! is_git_repo; then
+        error_exit "Not in a git repository"
+    fi
+    
+    # Check if base branch exists
+    if ! branch_exists "$base_branch"; then
+        error_exit "Base branch '$base_branch' not found locally or remotely"
+    fi
+    
+    # Check if target branch/commit exists (unless it's HEAD)
+    if [ "$target_branch" != "HEAD" ]; then
+        if ! git rev-parse --verify "$target_branch" >/dev/null 2>&1; then
+            error_exit "Target '$target_branch' not found"
+        fi
+    fi
+}
+
+# Generate patch filename
+generate_patch_filename() {
+    local base_branch="$1"
+    local target_branch="$2"
+    local timestamp=$(generate_timestamp)
+    local branch_name=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+    echo "${base_branch}_vs_${target_branch}_${timestamp}.patch"
+}
+
+# Generate patch file
+generate_patch() {
+    local base_branch="$1"
+    local target_branch="$2"
+    local patch_file="$3"
+    
+    debug "Generating patch file: $patch_file"
+    
+    if git diff $base_branch...$target_branch > "$patch_file" 2>/dev/null; then
+        local patch_size=$(get_file_size "$patch_file")
+        print_success "Patch file generated: $patch_file ($patch_size)"
+        
+        # Show patch file info
+        local line_count=$(wc -l < "$patch_file" 2>/dev/null || echo "0")
+        echo -e "📄 Patch file: ${YELLOW}$patch_file${NC} (${YELLOW}$line_count${NC} lines)"
+        
+        # Show first few lines of patch as preview
+        if [ "$line_count" -gt 0 ]; then
+            print_header "Patch preview (first 10 lines)"
+            head -10 "$patch_file"
+            if [ "$line_count" -gt 10 ]; then
+                echo -e "${GRAY}... (showing first 10 of $line_count lines)${NC}"
+            fi
+        fi
+    else
+        print_warning "Failed to generate patch file"
+    fi
+}
+
+# Show detailed diff statistics
+show_detailed_stats() {
+    local base_branch="$1"
+    local target_branch="$2"
+    local patch_file="$3"
+    
+    print_header "Diff Statistics: $target_branch vs $base_branch"
+    
+    # Count files changed
+    local files_changed=$(git diff --name-only $base_branch...$target_branch | wc -l)
+    echo -e "📁 Files changed: ${YELLOW}$files_changed${NC}"
+    
+    # Count lines added/removed
+    local lines_stats=$(git diff --stat $base_branch...$target_branch | tail -1)
+    if [ -n "$lines_stats" ]; then
+        echo -e "📈 Lines changed: ${YELLOW}$lines_stats${NC}"
+    fi
+    
+    # Show file types breakdown
+    print_header "File types changed"
+    local file_types=$(git diff --name-only $base_branch...$target_branch | sed 's/.*\.//' | sort | uniq -c | sort -nr)
+    if [ -n "$file_types" ]; then
+        echo "$file_types" | head -10
+    else
+        echo "   No files with extensions"
+    fi
+    
+    # Show largest changes
+    print_header "Largest changes"
+    git diff --stat $base_branch...$target_branch | head -10
+    
+    # Show commit count
+    local commit_count=$(git log --oneline $base_branch..$target_branch | wc -l)
+    echo -e "\n💾 Commits: ${YELLOW}$commit_count${NC}"
+    
+    # Show time range
+    local first_commit=$(git log --format="%cr" $base_branch..$target_branch | tail -1)
+    local last_commit=$(git log --format="%cr" $base_branch..$target_branch | head -1)
+    if [ -n "$first_commit" ] && [ -n "$last_commit" ]; then
+        echo -e "⏰ Time range: ${YELLOW}$first_commit${NC} to ${YELLOW}$last_commit${NC}"
+    fi
+}
+
+# Show file-by-file breakdown
+show_file_breakdown() {
+    local base_branch="$1"
+    local target_branch="$2"
+    
+    print_header "File-by-file breakdown"
+    
+    local changes=$(git diff --name-status $base_branch...$target_branch)
+    if [ -n "$changes" ]; then
+        echo "$changes" | while read -r status file; do
+            case $status in
+                A) echo -e "   ➕ Added: $file" ;;
+                M) echo -e "   ✏️  Modified: $file" ;;
+                D) echo -e "   ❌ Deleted: $file" ;;
+                R*) echo -e "   🔄 Renamed: $file" ;;
+                *) echo -e "   ❓ $status: $file" ;;
+            esac
+        done
+    else
+        echo "   No changes found"
+    fi
+}
+
+# Show contributor statistics
+show_contributor_stats() {
+    local base_branch="$1"
+    local target_branch="$2"
+    
+    print_header "Contributors"
+    
+    local contributors=$(git shortlog -sn --no-merges $base_branch..$target_branch)
+    if [ -n "$contributors" ]; then
+        echo "$contributors"
+    else
+        echo "   No contributors found"
+    fi
+}
+
+# Show recent commits
+show_recent_commits() {
+    local base_branch="$1"
+    local target_branch="$2"
+    
+    print_header "Recent commits"
+    
+    local commits=$(git log --oneline --max-count=10 $base_branch..$target_branch)
+    if [ -n "$commits" ]; then
+        echo "$commits"
+    else
+        echo "   No commits found"
+    fi
+}
+
+# Show usage
+show_usage() {
+    echo "Usage: $0 [BASE_BRANCH] [TARGET_BRANCH]"
+    echo ""
+    echo "Arguments:"
+    echo "  BASE_BRANCH    Base branch to compare from (default: develop)"
+    echo "  TARGET_BRANCH  Target branch/commit to compare to (default: HEAD)"
+    echo ""
+    echo "Examples:"
+    echo "  $0                                    # develop...HEAD"
+    echo "  $0 main                              # main...HEAD"
+    echo "  $0 develop feature-branch            # develop...feature-branch"
+    echo ""
+    echo "Features:"
+    echo "  • Generates a patch file with timestamp"
+    echo "  • Shows comprehensive diff statistics"
+    echo "  • Displays file breakdown and contributor info"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help     Show this help message"
+    echo "  -f, --files    Show only file breakdown"
+    echo "  -c, --commits  Show only recent commits"
+    echo "  -a, --authors  Show only contributor statistics"
+    echo ""
+    echo "Logging Options:"
+    echo "  --debug        Show debug messages"
+    echo "  --info         Show info messages"
+    echo "  --warn         Show warning messages"
+    echo "  --error        Show error messages only"
+    echo "  --quiet        Suppress all messages"
+}
+
+main() {
+    local base_branch="${1:-develop}"
+    local target_branch="${2:-HEAD}"
+    local show_files_only=false
+    local show_commits_only=false
+    local show_authors_only=false
+    
+    debug "Starting gdiffstats script"
+    info "Parsing arguments and setting up logging"
+    
+    # Parse options
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            -f|--files)
+                show_files_only=true
+                shift
+                ;;
+            -c|--commits)
+                show_commits_only=true
+                shift
+                ;;
+            -a|--authors)
+                show_authors_only=true
+                shift
+                ;;
+            *)
+                # This is handled by the main logic
+                shift
+                ;;
+        esac
+    done
+    
+    # Validate inputs
+    validate_inputs "$base_branch" "$target_branch"
+    
+    # Handle different modes
+    if [ "$show_files_only" = true ]; then
+        debug "Showing file breakdown only"
+        show_file_breakdown "$base_branch" "$target_branch"
+        exit 0
+    fi
+    
+    if [ "$show_commits_only" = true ]; then
+        debug "Showing commits only"
+        show_recent_commits "$base_branch" "$target_branch"
+        exit 0
+    fi
+    
+    if [ "$show_authors_only" = true ]; then
+        debug "Showing contributor statistics only"
+        show_contributor_stats "$base_branch" "$target_branch"
+        exit 0
+    fi
+    
+    # Generate patch file
+    local patch_file=$(generate_patch_filename "$base_branch" "$target_branch")
+    generate_patch "$base_branch" "$target_branch" "$patch_file"
+    
+    # Show comprehensive statistics
+    debug "Showing comprehensive statistics"
+    show_detailed_stats "$base_branch" "$target_branch" "$patch_file"
+    show_file_breakdown "$base_branch" "$target_branch"
+    show_contributor_stats "$base_branch" "$target_branch"
+    show_recent_commits "$base_branch" "$target_branch"
+    
+    info "Statistics generation completed successfully"
+}
+
+main "$@"
+

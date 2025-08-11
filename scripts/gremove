@@ -1,0 +1,218 @@
+#!/bin/bash
+#
+# Git commit removal script
+. _utils
+
+#######################################
+# Git Commit Removal Script
+# This script provides different ways to remove a specific git commit
+# Arguments:
+#   $1 - Commit hash to remove
+#   $2 - Removal method (soft/mixed/hard/revert/interactive/list)
+# Outputs:
+#   Removes the specified commit using the chosen method
+#######################################
+
+# Function to show usage
+show_usage() {
+    echo "Usage: $0 [OPTIONS] [COMMIT_HASH]"
+    echo ""
+    echo "Options:"
+    echo "  -s, --soft     Remove commit via interactive rebase"
+    echo "  -m, --mixed    Remove commit via interactive rebase"
+    echo "  -h, --hard     Remove commit via interactive rebase [default]"
+    echo "  -r, --revert   Create a revert commit (preserves history)"
+    echo "  -i, --interactive Interactive rebase to remove commit"
+    echo "  -l, --list     List recent commits"
+    echo "  -h, --help     Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0                    # Remove commit via interactive rebase (default)"
+    echo "  $0 -s                 # Remove commit via interactive rebase"
+    echo "  $0 -m                 # Remove commit via interactive rebase"
+    echo "  $0 -r                 # Create revert commit (preserves history)"
+    echo "  $0 -i                 # Interactive rebase"
+    echo "  $0 -l                 # List recent commits"
+}
+
+# Function to list recent commits
+list_commits() {
+    print_info "Recent commits:"
+    echo ""
+    git log --oneline -5
+    echo ""
+}
+
+# Function to check if we're in a git repository
+check_git_repo() {
+    if ! is_git_repo; then
+        error_exit "Not in a git repository!"
+    fi
+}
+
+# Function to check if commit exists
+check_commit() {
+    local commit_hash=$1
+    if ! git rev-parse --verify "$commit_hash" > /dev/null 2>&1; then
+        error_exit "Commit $commit_hash does not exist!"
+    fi
+}
+
+# Function to confirm action
+confirm_action() {
+    local action=$1
+    local commit_hash=$2
+    
+    echo ""
+    print_warning "About to perform: $action"
+    print_info "Commit: $commit_hash"
+    print_info "Commit message: $(git log --format=%B -n 1 $commit_hash)"
+    echo ""
+    read -p "Are you sure you want to continue? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Operation cancelled."
+        exit 0
+    fi
+}
+
+# Get commit info with color formatting
+get_commit_info() {
+    local commit_hash="$1"
+    local short_hash=$(git rev-parse --short "$commit_hash")
+    local subject=$(git log --format=%s -n 1 "$commit_hash")
+    local author=$(git log --format=%an -n 1 "$commit_hash")
+    local date=$(git log --format=%cr -n 1 "$commit_hash")
+    
+    echo -e "${YELLOW}$short_hash${NC} - ${BLUE}$subject${NC} (${GREEN}$author${NC}, ${CYAN}$date${NC})"
+}
+
+# Function to remove commit via interactive rebase
+remove_via_rebase() {
+    local commit_hash=$1
+    local method=${2:-hard}
+    
+    print_info "Removing commit via interactive rebase ($method)..."
+    
+    # Find the commit before the target commit
+    local parent_commit=$(git rev-parse "$commit_hash^")
+    
+    # Start interactive rebase
+    if git rebase -i "$parent_commit"; then
+        print_success "Commit removed successfully!"
+    else
+        print_error "Interactive rebase failed. You may need to resolve conflicts manually."
+        print_info "To abort the rebase: git rebase --abort"
+        print_info "To continue after resolving conflicts: git rebase --continue"
+    fi
+}
+
+# Function to create revert commit
+create_revert_commit() {
+    local commit_hash=$1
+    
+    print_info "Creating revert commit..."
+    
+    if git revert --no-edit "$commit_hash"; then
+        print_success "Revert commit created successfully!"
+    else
+        print_error "Failed to create revert commit"
+    fi
+}
+
+# Function to perform interactive rebase
+interactive_rebase() {
+    print_info "Starting interactive rebase..."
+    print_info "In the editor, change 'pick' to 'drop' for commits you want to remove"
+    
+    if git rebase -i HEAD~5; then
+        print_success "Interactive rebase completed successfully!"
+    else
+        print_error "Interactive rebase failed"
+    fi
+}
+
+main() {
+    local method="hard"
+    local commit_hash=""
+    
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -s|--soft)
+                method="soft"
+                shift
+                ;;
+            -m|--mixed)
+                method="mixed"
+                shift
+                ;;
+            -h|--hard)
+                method="hard"
+                shift
+                ;;
+            -r|--revert)
+                method="revert"
+                shift
+                ;;
+            -i|--interactive)
+                method="interactive"
+                shift
+                ;;
+            -l|--list)
+                list_commits
+                exit 0
+                ;;
+            --help)
+                show_usage
+                exit 0
+                ;;
+            -*)
+                print_error "Unknown option: $1"
+                show_usage
+                exit 1
+                ;;
+            *)
+                if [ -z "$commit_hash" ]; then
+                    commit_hash="$1"
+                else
+                    print_error "Multiple commit hashes provided"
+                    exit 1
+                fi
+                shift
+                ;;
+        esac
+    done
+    
+    # Check if we're in a git repository
+    check_git_repo
+    
+    # Handle different methods
+    case $method in
+        "interactive")
+            interactive_rebase
+            ;;
+        "revert")
+            if [ -z "$commit_hash" ]; then
+                print_error "Commit hash required for revert operation"
+                show_usage
+                exit 1
+            fi
+            check_commit "$commit_hash"
+            confirm_action "revert commit" "$commit_hash"
+            create_revert_commit "$commit_hash"
+            ;;
+        *)
+            if [ -z "$commit_hash" ]; then
+                print_error "Commit hash required"
+                show_usage
+                exit 1
+            fi
+            check_commit "$commit_hash"
+            confirm_action "remove commit via $method rebase" "$commit_hash"
+            remove_via_rebase "$commit_hash" "$method"
+            ;;
+    esac
+}
+
+main "$@" 

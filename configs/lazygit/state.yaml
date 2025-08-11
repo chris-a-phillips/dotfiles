@@ -1,0 +1,21 @@
+lastupdatecheck: 1717779178
+recentrepos:
+    - /Users/chris.phillips/environment/oc/payment-management-miniapp
+    - /Users/chris.phillips/environment/oc/payment-management-product-api
+    - /Users/chris.phillips/.dotfiles
+    - /Users/chris.phillips/.config/nvim
+startuppopupversion: 5
+lastversion: 0.47.1
+customcommandshistory:
+    - q
+    - quit
+    - quir
+    - config
+hidecommandlog: true
+ignorewhitespaceindiffview: false
+diffcontextsize: 3
+renamesimilaritythreshold: 50
+localbranchsortorder: recency
+remotebranchsortorder: alphabetical
+gitlogorder: topo-order
+gitlogshowgraph: always

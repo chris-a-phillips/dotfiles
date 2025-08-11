@@ -1,0 +1,335 @@
+#!/bin/bash
+#
+# Git review changes
+. _utils
+
+#######################################
+# Git review changes in branch from default branch (usually develop)
+# Arguments:
+#   $1 - Specific file or folder to review (optional)
+# Outputs:
+#   Shows diff between current branch and default branch
+#######################################
+
+# Parse logging arguments first
+remaining_args=$(parse_log_args "$@")
+set -- $remaining_args
+
+# Detect the default base branch
+detect_default_branch() {
+    # Priority order: develop > main > master
+    if git rev-parse --verify --quiet develop >/dev/null; then
+        echo "develop"
+    elif git rev-parse --verify --quiet main >/dev/null; then
+        echo "main"
+    elif git rev-parse --verify --quiet master >/dev/null; then
+        echo "master"
+    else
+        echo ""
+    fi
+}
+
+# Validate git repository and branches
+validate_inputs() {
+    local base_branch="$1"
+    local target_path="$2"
+    
+    # Check if we're in a git repository
+    if ! is_git_repo; then
+        error_exit "Not in a git repository"
+    fi
+    
+    # Check if base branch exists
+    if ! branch_exists "$base_branch"; then
+        error_exit "Base branch '$base_branch' not found"
+    fi
+    
+    # Check if we're already on the base branch
+    local current_branch=$(get_current_branch)
+    if [ "$current_branch" = "$base_branch" ]; then
+        error_exit "Already on base branch '$base_branch'. No changes to review."
+    fi
+    
+    # Check if target path exists (if specified)
+    if [ -n "$target_path" ]; then
+        # Check if it's a tracked file or directory in git
+        if ! git ls-files --error-unmatch "$target_path" >/dev/null 2>&1; then
+            # If not a tracked file, check if it's a directory with tracked files
+            if dir_exists "$target_path"; then
+                local tracked_files=$(git ls-files "$target_path" 2>/dev/null | wc -l)
+                if [ "$tracked_files" -eq 0 ]; then
+                    error_exit "Path '$target_path' not found in git repository or contains no tracked files"
+                fi
+            else
+                error_exit "Path '$target_path' not found in git repository"
+            fi
+        fi
+    fi
+}
+
+# Show review summary
+show_review_summary() {
+    local base_branch="$1"
+    local target_path="$2"
+    local current_branch=$(get_current_branch)
+    
+    print_header "Review Summary"
+    echo -e "Current branch: ${YELLOW}$current_branch${NC}"
+    echo -e "Base branch: ${YELLOW}$base_branch${NC}"
+    
+    if [ -n "$target_path" ]; then
+        if dir_exists "$target_path"; then
+            echo -e "Target folder: ${YELLOW}$target_path${NC}"
+        else
+            echo -e "Target file: ${YELLOW}$target_path${NC}"
+        fi
+    fi
+    
+    # Count files changed
+    local diff_cmd="git diff --name-only $base_branch...HEAD"
+    if [ -n "$target_path" ]; then
+        diff_cmd="$diff_cmd -- $target_path"
+    fi
+    local files_changed=$($diff_cmd | wc -l)
+    echo -e "Files changed: ${YELLOW}$files_changed${NC}"
+    
+    # Count commits
+    local log_cmd="git log --oneline $base_branch..HEAD"
+    if [ -n "$target_path" ]; then
+        log_cmd="$log_cmd -- $target_path"
+    fi
+    local commit_count=$($log_cmd | wc -l)
+    echo -e "Commits: ${YELLOW}$commit_count${NC}"
+    
+    # Show time range
+    local first_commit=$($log_cmd | tail -1 | cut -d' ' -f1)
+    local last_commit=$($log_cmd | head -1 | cut -d' ' -f1)
+    if [ -n "$first_commit" ] && [ -n "$last_commit" ] && [ "$first_commit" != "$last_commit" ]; then
+        local first_time=$(git log --format="%cr" -n 1 $first_commit 2>/dev/null)
+        local last_time=$(git log --format="%cr" -n 1 $last_commit 2>/dev/null)
+        if [ -n "$first_time" ] && [ -n "$last_time" ]; then
+            echo -e "Time range: ${YELLOW}$first_time${NC} to ${YELLOW}$last_time${NC}"
+        fi
+    fi
+}
+
+# Show file breakdown
+show_file_breakdown() {
+    local base_branch="$1"
+    local target_path="$2"
+    
+    print_header "Files changed"
+    
+    local diff_cmd="git diff --name-status $base_branch...HEAD"
+    if [ -n "$target_path" ]; then
+        diff_cmd="$diff_cmd -- $target_path"
+    fi
+    
+    local changes=$($diff_cmd)
+    if [ -n "$changes" ]; then
+        echo "$changes" | while read -r status file; do
+            case $status in
+                A) echo -e "   ➕ Added: $file" ;;
+                M) echo -e "   ✏️  Modified: $file" ;;
+                D) echo -e "   ❌ Deleted: $file" ;;
+                R*) echo -e "   🔄 Renamed: $file" ;;
+                *) echo -e "   ❓ $status: $file" ;;
+            esac
+        done
+    else
+        echo "   No changes found"
+    fi
+}
+
+# Show recent commits
+show_recent_commits() {
+    local base_branch="$1"
+    local target_path="$2"
+    
+    print_header "Recent commits"
+    
+    local log_cmd="git log --oneline --max-count=10 $base_branch..HEAD"
+    if [ -n "$target_path" ]; then
+        log_cmd="$log_cmd -- $target_path"
+    fi
+    
+    local commits=$($log_cmd)
+    if [ -n "$commits" ]; then
+        echo "$commits"
+    else
+        echo "   No commits found"
+    fi
+}
+
+# Show the actual diff
+show_diff() {
+    local base_branch="$1"
+    local target_path="$2"
+    local diff_format="$3"
+    
+    print_header "Diff: $base_branch...HEAD"
+    if [ -n "$target_path" ]; then
+        if dir_exists "$target_path"; then
+            echo -e "${CYAN}Folder: $target_path${NC}"
+        else
+            echo -e "${CYAN}File: $target_path${NC}"
+        fi
+    fi
+    
+    local diff_cmd="git diff $base_branch...HEAD"
+    if [ -n "$target_path" ]; then
+        diff_cmd="$diff_cmd -- $target_path"
+    fi
+    
+    case "$diff_format" in
+        "stat")
+            git diff --stat $base_branch...HEAD ${target_path:+-- $target_path}
+            ;;
+        "name-only")
+            git diff --name-only $base_branch...HEAD ${target_path:+-- $target_path}
+            ;;
+        "name-status")
+            git diff --name-status $base_branch...HEAD ${target_path:+-- $target_path}
+            ;;
+        "unified")
+            git diff --unified=3 $base_branch...HEAD ${target_path:+-- $target_path}
+            ;;
+        "word-diff")
+            git diff --word-diff=color $base_branch...HEAD ${target_path:+-- $target_path}
+            ;;
+        *)
+            eval "$diff_cmd"
+            ;;
+    esac
+}
+
+# Show usage
+show_usage() {
+    echo "Usage: $0 [FILE_OR_FOLDER] [OPTIONS]"
+    echo ""
+    echo "Arguments:"
+    echo "  FILE_OR_FOLDER  Specific file or folder to review (optional)"
+    echo ""
+    echo "Examples:"
+    echo "  $0                                    # Review all changes"
+    echo "  $0 src/components/App.tsx            # Review specific file"
+    echo "  $0 src/components/                   # Review specific folder"
+    echo "  $0 package.json                      # Review specific file"
+    echo "  $0 scripts/                          # Review scripts folder"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help     Show this help message"
+    echo "  -s, --summary  Show only summary (no diff)"
+    echo "  -f, --files    Show only file breakdown"
+    echo "  -c, --commits  Show only recent commits"
+    echo "  --stat         Show diff with statistics only"
+    echo "  --name-only    Show only changed file names"
+    echo "  --name-status  Show file names with status"
+    echo "  --unified      Show unified diff format"
+    echo "  --word-diff    Show word-level diff"
+    echo ""
+    echo "Logging Options:"
+    echo "  --debug        Show debug messages"
+    echo "  --info         Show info messages"
+    echo "  --warn         Show warning messages"
+    echo "  --error        Show error messages only"
+    echo "  --quiet        Suppress all messages"
+}
+
+main() {
+    local target_path="$1"
+    local show_summary_only=false
+    local show_files_only=false
+    local show_commits_only=false
+    local diff_format=""
+    
+    # Parse options
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            -s|--summary)
+                show_summary_only=true
+                shift
+                ;;
+            -f|--files)
+                show_files_only=true
+                shift
+                ;;
+            -c|--commits)
+                show_commits_only=true
+                shift
+                ;;
+            --stat)
+                diff_format="stat"
+                shift
+                ;;
+            --name-only)
+                diff_format="name-only"
+                shift
+                ;;
+            --name-status)
+                diff_format="name-status"
+                shift
+                ;;
+            --unified)
+                diff_format="unified"
+                shift
+                ;;
+            --word-diff)
+                diff_format="word-diff"
+                shift
+                ;;
+            *)
+                # This is handled by the main logic
+                shift
+                ;;
+        esac
+    done
+    
+    debug "Starting greview script"
+    info "Parsing arguments and setting up logging"
+    
+    # Auto-detect default base branch
+    local base_branch=$(detect_default_branch)
+    if [ -z "$base_branch" ]; then
+        error_exit "No develop, main, or master branch found. Cannot determine default branch."
+    fi
+    
+    info "Using default branch: $base_branch"
+    
+    # Validate inputs
+    validate_inputs "$base_branch" "$target_path"
+    
+    # Handle different modes
+    if [ "$show_summary_only" = true ]; then
+        debug "Showing summary only"
+        show_review_summary "$base_branch" "$target_path"
+        exit 0
+    fi
+    
+    if [ "$show_files_only" = true ]; then
+        debug "Showing file breakdown only"
+        show_file_breakdown "$base_branch" "$target_path"
+        exit 0
+    fi
+    
+    if [ "$show_commits_only" = true ]; then
+        debug "Showing commits only"
+        show_recent_commits "$base_branch" "$target_path"
+        exit 0
+    fi
+    
+    # Show comprehensive review
+    debug "Showing comprehensive review"
+    show_review_summary "$base_branch" "$target_path"
+    show_file_breakdown "$base_branch" "$target_path"
+    show_recent_commits "$base_branch" "$target_path"
+    show_diff "$base_branch" "$target_path" "$diff_format"
+    
+    info "Review completed successfully"
+}
+
+main "$@" 

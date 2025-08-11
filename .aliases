@@ -51,7 +51,6 @@ alias fcd="cd \$(find * -type d | fzf)"            # Fuzzy directory changer
 alias ffcd="cd ~ && cd \$(find * -type d | fzf)"   # Fuzzy directory changer from home directory
 
 # Git Commands
-alias gst='git rev-parse --git-dir > /dev/null 2>&1 && git status || exa'  # Git status or directory listing if not in a git repo
 alias gc="git commit"                               # Git commit
 alias gcm="git commit -m"                           # Git commit with message
 alias gco="git checkout"                            # Git checkout
@@ -65,24 +64,10 @@ alias gundo="git reset HEAD~1 --mixed"              # Git undo last commit
 alias gamend="git commit --amend -m"                # Git amend last commit
 alias gunstage="git restore --staged"               # Git unstage changes
 alias gshove="!git push origin HEAD"                # Git push current branch
-alias greview='
-# Git review changes in branch from main, develop, or master
-if git rev-parse --verify --quiet main >/dev/null; then
-    echo "Comparing against main"
-    git diff main...HEAD
-elif git rev-parse --verify --quiet develop >/dev/null; then
-    echo "Comparing against develop"
-    git diff develop...HEAD
-elif git rev-parse --verify --quiet master >/dev/null; then
-    echo "Comparing against master"
-    git diff master...HEAD
-else
-    echo "Error: No main, develop, or master branch found"
-fi
-'
 alias gnuke="git reset --hard"                      # Git reset hard
 alias gdelete="git branch -D"                        # Git delete branch
 alias ga="git add"                                   # Git add
+alias gacm="git add . && git commit -m"              # Git add all and commit with message
 alias gb="git branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"  # Git branch with formatting
 alias gbr="git branch -r --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate"  # Git remote branch with formatting
 alias gf="git fetch"                                 # Git fetch

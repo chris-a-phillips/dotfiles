@@ -15,6 +15,10 @@
 #   Activates virtual environment or creates a new one.
 #######################################
 
+# Parse logging arguments first
+remaining_args=$(parse_log_args "$@")
+set -- $remaining_args
+
 # Find Python executable
 find_python() {
     # Try python3 first, then python
@@ -30,16 +34,16 @@ find_python() {
 # Create virtual environment
 create_venv() {
     local python_cmd=$(find_python)
-    echo -e "${YELLOW}Creating new virtual environment...${NC}"
+    info "Creating new virtual environment..."
     
     if $python_cmd -m venv .venv; then
-        echo -e "${GREEN}Virtual environment created successfully!${NC}"
+        print_success "Virtual environment created successfully!"
         source .venv/bin/activate
-        echo -e "${GREEN}Virtual environment activated.${NC}"
+        info "Virtual environment activated."
         
         # Upgrade pip if needed
         if command_exists pip; then
-            echo -e "${YELLOW}Upgrading pip...${NC}"
+            info "Upgrading pip..."
             pip install --upgrade pip >/dev/null 2>&1
         fi
     else
@@ -49,38 +53,80 @@ create_venv() {
 
 # Activate existing virtual environment
 activate_existing_venv() {
-    echo -e "${GREEN}Activating existing virtual environment...${NC}"
+    info "Activating existing virtual environment..."
     source .venv/bin/activate
     
     # Check if activation was successful
     if [ -n "$VIRTUAL_ENV" ]; then
-        echo -e "${GREEN}Virtual environment activated: $VIRTUAL_ENV${NC}"
+        print_success "Virtual environment activated: $VIRTUAL_ENV"
     else
         error_exit "Failed to activate virtual environment"
     fi
+}
+
+# Show usage
+show_usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Description:"
+    echo "  Activates the virtual environment for the current project."
+    echo "  If no virtual environment is found, creates a new one."
+    echo ""
+    echo "Options:"
+    echo "  -h, --help     Show this help message"
+    echo ""
+    echo "Logging Options:"
+    echo "  --debug        Show debug messages"
+    echo "  --info         Show info messages"
+    echo "  --warn         Show warning messages"
+    echo "  --error        Show error messages only"
+    echo "  --quiet        Suppress all messages"
 }
 
 # Main activation function
 activate_venv() {
     # Check if we're already in a virtual environment
     if [ -n "$VIRTUAL_ENV" ]; then
-        echo -e "${YELLOW}Already in virtual environment: $VIRTUAL_ENV${NC}"
+        print_warning "Already in virtual environment: $VIRTUAL_ENV"
         return 0
     fi
     
     # Check for existing virtual environment
-    if [ -f ".venv/bin/activate" ]; then
+    if file_exists ".venv/bin/activate"; then
         activate_existing_venv
     else
-        echo -e "${YELLOW}No virtual environment found.${NC}"
+        info "No virtual environment found."
         create_venv
     fi
 }
 
-# Call the main function
 main() {
+    debug "Starting activate script"
+    info "Parsing arguments and setting up logging"
+    
+    # Parse options
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            *)
+                # This is handled by the main logic
+                shift
+                ;;
+        esac
+    done
+    
+    debug "Checking Python installation"
+    local python_cmd=$(find_python)
+    debug "Using Python: $python_cmd"
+    
+    # Call the main function
+    debug "Activating virtual environment"
     activate_venv
+    
+    info "Virtual environment setup completed"
 }
 
-# Execute main with arguments passed to script
 main "$@"
