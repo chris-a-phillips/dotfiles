@@ -9,7 +9,7 @@
 #   $1 - Base branch (default: develop)
 #   $2 - Target branch/commit (default: HEAD)
 # Outputs:
-#   Shows detailed diff statistics
+#   Shows detailed diff statistics and generates patch file
 #######################################
 
 # Parse logging arguments first
@@ -39,10 +39,49 @@ validate_inputs() {
     fi
 }
 
+# Generate patch filename
+generate_patch_filename() {
+    local base_branch="$1"
+    local target_branch="$2"
+    local timestamp=$(generate_timestamp)
+    local branch_name=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+    echo "${base_branch}_vs_${target_branch}_${timestamp}.patch"
+}
+
+# Generate patch file
+generate_patch() {
+    local base_branch="$1"
+    local target_branch="$2"
+    local patch_file="$3"
+    
+    debug "Generating patch file: $patch_file"
+    
+    if git diff $base_branch...$target_branch > "$patch_file" 2>/dev/null; then
+        local patch_size=$(get_file_size "$patch_file")
+        print_success "Patch file generated: $patch_file ($patch_size)"
+        
+        # Show patch file info
+        local line_count=$(wc -l < "$patch_file" 2>/dev/null || echo "0")
+        echo -e "📄 Patch file: ${YELLOW}$patch_file${NC} (${YELLOW}$line_count${NC} lines)"
+        
+        # Show first few lines of patch as preview
+        if [ "$line_count" -gt 0 ]; then
+            print_header "Patch preview (first 10 lines)"
+            head -10 "$patch_file"
+            if [ "$line_count" -gt 10 ]; then
+                echo -e "${GRAY}... (showing first 10 of $line_count lines)${NC}"
+            fi
+        fi
+    else
+        print_warning "Failed to generate patch file"
+    fi
+}
+
 # Show detailed diff statistics
 show_detailed_stats() {
     local base_branch="$1"
     local target_branch="$2"
+    local patch_file="$3"
     
     print_header "Diff Statistics: $target_branch vs $base_branch"
     
@@ -147,6 +186,11 @@ show_usage() {
     echo "  $0 main                              # main...HEAD"
     echo "  $0 develop feature-branch            # develop...feature-branch"
     echo ""
+    echo "Features:"
+    echo "  • Generates a patch file with timestamp"
+    echo "  • Shows comprehensive diff statistics"
+    echo "  • Displays file breakdown and contributor info"
+    echo ""
     echo "Options:"
     echo "  -h, --help     Show this help message"
     echo "  -f, --files    Show only file breakdown"
@@ -219,9 +263,13 @@ main() {
         exit 0
     fi
     
+    # Generate patch file
+    local patch_file=$(generate_patch_filename "$base_branch" "$target_branch")
+    generate_patch "$base_branch" "$target_branch" "$patch_file"
+    
     # Show comprehensive statistics
     debug "Showing comprehensive statistics"
-    show_detailed_stats "$base_branch" "$target_branch"
+    show_detailed_stats "$base_branch" "$target_branch" "$patch_file"
     show_file_breakdown "$base_branch" "$target_branch"
     show_contributor_stats "$base_branch" "$target_branch"
     show_recent_commits "$base_branch" "$target_branch"
