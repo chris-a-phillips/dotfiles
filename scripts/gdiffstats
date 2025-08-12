@@ -44,8 +44,26 @@ generate_patch_filename() {
     local base_branch="$1"
     local target_branch="$2"
     local timestamp=$(generate_timestamp)
-    local branch_name=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
-    echo "${base_branch}_vs_${target_branch}_${timestamp}.patch"
+    local current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+    
+    # Create a more descriptive filename
+    local filename=""
+    
+    # If target is HEAD, use current branch name
+    if [ "$target_branch" = "HEAD" ]; then
+        filename="${current_branch}_vs_${base_branch}"
+    else
+        filename="${target_branch}_vs_${base_branch}"
+    fi
+    
+    # Add commit hash for more specificity
+    local commit_hash=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    if [ "$commit_hash" != "unknown" ]; then
+        filename="${filename}_${commit_hash}"
+    fi
+    
+    # Add timestamp and extension
+    echo "${filename}_${timestamp}.patch"
 }
 
 # Generate patch file
