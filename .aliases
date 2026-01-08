@@ -11,7 +11,8 @@ alias :q="exit"
 alias lsa="ls -a"                                 # Print hidden files
 
 # Dev Aliases
-alias edot="cd ~/.dotfiles/ && nvim ."                  # Open Neovim config directory
+alias edot="cd ~/.dotfiles/ && nvim ."            # Open Neovim config directory
+alias evim="cd ~/.config/nvim && nvim ."          # Open Lazyvim config directory
 alias muxoc="tmuxinator start oc"
 
 # Terminal Shortcuts
@@ -36,7 +37,7 @@ alias killport="lsof -ti:8080 | xargs kill -9"     # Kill process on port (custo
 alias ll="ls -la"                                   # Long listing with hidden files
 alias lt="ls -lt"                                   # List by time
 alias lsize="ls -lahS"                              # List by size
-alias tree="tree -C -L"                              # Colored tree view with depth level (usage: tree 2)
+# alias tree="tree -C -L 4"                          # Colored tree view with depth level (usage: tree 2)
 
 # Personal Helpful Commands
 alias als="bat ~/.dotfiles/.aliases"              # View personal aliases file

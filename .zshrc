@@ -93,3 +93,4 @@ setopt HIST_IGNORE_DUPS
 setopt INC_APPEND_HISTORY      # Immediately write to file
 setopt SHARE_HISTORY           # Share across sessions
 setopt HIST_REDUCE_BLANKS      # Trim extra spaces
+
