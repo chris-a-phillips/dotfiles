@@ -45,6 +45,7 @@ alias fns="ls ~/bin"                              # List files in the ~/bin dire
 alias ppath="echo "${PATH//:/$'\n'}""             # Print each PATH directory on a new line
 alias pvars='printenv | awk -F= "{ printf \"%-30s %s\n\", \$1, \$2 }" | sort' # Print each $VARIABLE
 alias myip="curl ifconfig.me"                    # Get public IP
+alias dbui='nvim -c ":DBUI"'                     # Start standalone instance for vim-dadbod-ui for database queries
 
 # Aliases for utilities downloaded from Homebrew
 alias twf='twf --previewCmd="bat --color=always --style=grid,numbers {}" -preview=true'  # Fuzzy file finder with preview using bat

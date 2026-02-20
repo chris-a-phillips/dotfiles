@@ -14,8 +14,6 @@ brew "glib"
 # Vector graphics library with cross-device output support
 brew "cairo"
 # Manage your dotfiles across multiple diverse machines, securely
-brew "chezmoi"
-# Modern replacement for 'ls'
 brew "exa"
 # Asynchronous event library
 brew "libevent"
