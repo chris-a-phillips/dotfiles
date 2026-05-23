@@ -165,6 +165,13 @@ install_dotfiles() {
   link_file "$DOTFILES_DIR/tmux/statusline.conf" "$HOME/.config/tmux/statusline.conf"
   link_file "$DOTFILES_DIR/tmux/utility.conf" "$HOME/.config/tmux/utility.conf"
   link_file "$DOTFILES_DIR/tmux/macos.conf" "$HOME/.config/tmux/macos.conf"
+
+  run mkdir -p "$HOME/.config/tmuxinator"
+  local tmuxinator_file
+  for tmuxinator_file in "$DOTFILES_DIR"/tmuxinator/*.yml; do
+    [[ -f "$tmuxinator_file" ]] || continue
+    link_file "$tmuxinator_file" "$HOME/.config/tmuxinator/$(basename "$tmuxinator_file")"
+  done
 }
 
 install_scripts() {

@@ -1,0 +1,22 @@
+# Generic repo workspace.
+# Start from any repo with:
+#   PROJECT_DIR="$PWD" tmuxinator start repo
+
+name: repo
+root: <%= ENV.fetch("PROJECT_DIR", Dir.pwd) %>
+
+windows:
+  - code:
+      layout: main-vertical
+      panes:
+        - nvim .
+        -
+  - git:
+      panes:
+        - lazygit
+  - llm:
+      panes:
+        - llm chat
+  - shell:
+      panes:
+        -

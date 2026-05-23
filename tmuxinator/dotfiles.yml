@@ -1,0 +1,27 @@
+# Dotfiles and editor config workspace.
+
+name: dotfiles
+root: ~/.dotfiles
+
+windows:
+  - dotfiles:
+      layout: main-vertical
+      panes:
+        - nvim .
+        -
+  - nvim-config:
+      root: ~/.config/nvim
+      layout: main-vertical
+      panes:
+        - nvim .
+        -
+  - git:
+      panes:
+        - lazygit
+  - navi:
+      root: ~/.config/navi
+      panes:
+        - navi
+  - shell:
+      panes:
+        -

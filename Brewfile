@@ -11,6 +11,8 @@ tap "wvanlint/twf"
 brew "eza"
 # Play, record, convert, and stream audio and video
 brew "ffmpeg"
+# Fast, user-friendly alternative to find; used by Snacks explorer/project search
+brew "fd"
 # Banner-like program prints strings as ASCII art
 brew "figlet"
 # Command-line fuzzy finder written in Go

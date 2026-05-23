@@ -1,0 +1,65 @@
+% git, scripts
+
+# Show smart git status
+gst
+
+# Show short git status
+gst --short
+
+# Switch git branches with the helper
+gsw
+
+# Create a new branch with the helper
+gbnew <new_branch>
+
+# Create a new branch and choose the name interactively
+gbnew
+
+# Review current branch against the default branch
+greview
+
+# Review one file or folder against the default branch
+greview <path>
+
+# Show current branch summary against base branch
+gbranchsum <base_branch>
+
+# Generate a patch from base branch to HEAD
+gdiff <base_branch>
+
+# Generate a patch from base branch to target branch
+gdiff <base_branch> <target_branch>
+
+# Show detailed diff stats from base branch to HEAD
+gdiffstats <base_branch>
+
+# Pull all direct child git repos under a folder
+pull-all <directory>
+
+# List recent commits before removing one
+gremove --list
+
+# Revert a commit safely
+gremove --revert <commit>
+
+# Soft-remove a commit and keep changes staged
+gremove --soft <commit>
+
+# Interactively reset to a recent commit
+greset
+
+# Check if another branch leaked into the current branch
+gcheckconflicts <other_branch>
+
+# Clean files from another branch out of the current branch
+gcleanconflicts <other_branch>
+
+# Create a clean branch with your changes only
+gselectiveapply <target_branch> <unwanted_branch>
+
+$ base_branch: printf "develop\nmain\nmaster\n"
+$ target_branch: git branch --format='%(refname:short)' --sort=-committerdate
+$ other_branch: git branch --format='%(refname:short)' --sort=-committerdate
+$ unwanted_branch: git branch --format='%(refname:short)' --sort=-committerdate
+$ commit: git log --oneline -20 --format='%h'
+$ directory: printf "$HOME/code\n$HOME/environment\n$HOME/.config\n"
