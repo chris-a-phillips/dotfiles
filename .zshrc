@@ -12,17 +12,17 @@ fi
 # -------------------------------
 # Optimized Paths and Environment Variables
 # -------------------------------
-# Combine all PATH additions into a single operation
-export PATH="$HOME/bin:/usr/local/bin:/opt/homebrew/bin:$HOME/.dotfiles/scripts:/Applications/Alacritty.app/Contents/MacOS:$HOME/.local/bin:$PATH"
-
-# Set repository path for easy access without baking a machine-specific work path into the repo.
-export SOURCE_REPO_PATH="${SOURCE_REPO_PATH:-$HOME/src}"
+# Combine all PATH additions into a single operation.
+export PATH="$HOME/bin:/usr/local/bin:/opt/homebrew/bin:$HOME/.local/bin:$PATH"
 
 # Language environment variable to prevent locale-related warnings
 export LANG=en_US.UTF-8
 
 # Set default editor to Neovim
 export EDITOR=nvim
+
+# Keep Navi config in a stable, dotfiles-managed location.
+export NAVI_CONFIG="$HOME/.config/navi/config.yaml"
 
 # -------------------------------
 # Zsh Aliases (Fast Loading)
@@ -46,39 +46,10 @@ bindkey '^P' up-history
 # Set theme to Powerlevel10k when it is installed.
 if [ -f ~/powerlevel10k/powerlevel10k.zsh-theme ]; then
   source ~/powerlevel10k/powerlevel10k.zsh-theme
-  ZSH_THEME="powerlevel10k/powerlevel10k"
 fi
 
 # Load Powerlevel10k configuration
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-# -------------------------------
-# Lazy Loading for Heavy Components
-# -------------------------------
-# Lazy load NVM (Node Version Manager) - only when node/npm is used
-nvm() {
-  unset -f nvm
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
-  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
-  nvm "$@"
-}
-
-# Lazy load pyenv - only when python is used
-pyenv() {
-  unset -f pyenv
-  export PYENV_ROOT="$HOME/.pyenv"
-  [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-  eval "$(pyenv init -)"
-  pyenv "$@"
-}
-
-# Lazy load direnv - only when entering directories with .envrc
-direnv() {
-  unset -f direnv
-  eval "$(direnv hook zsh)"
-  direnv "$@"
-}
 
 # -------------------------------
 # History Configuration

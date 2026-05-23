@@ -99,8 +99,15 @@ show_directory_listing() {
     print_header "Directory Listing"
     echo -e "📁 Current directory: ${YELLOW}$(pwd)${NC}"
     
-    # Check if we have exa available
-    if command_exists exa; then
+    # Check if we have eza available
+    if command_exists eza; then
+        info "Using eza for enhanced directory listing"
+        if [ -n "$listing_args" ]; then
+            eza $listing_args
+        else
+            eza --long --all --group --header --icons
+        fi
+    elif command_exists exa; then
         info "Using exa for enhanced directory listing"
         if [ -n "$listing_args" ]; then
             exa $listing_args
@@ -115,7 +122,7 @@ show_directory_listing() {
             ls -la
         fi
     else
-        error_exit "Neither exa nor ls found for directory listing"
+        error_exit "Neither eza, exa, nor ls found for directory listing"
     fi
     
     # Show additional directory information
@@ -263,8 +270,8 @@ main() {
         info "Not in a git repository, showing directory listing"
         
         # Check if we have any useful commands for directory listing
-        if ! command_exists exa && ! command_exists ls; then
-            error_exit "No suitable directory listing command found (exa or ls)"
+        if ! command_exists eza && ! command_exists exa && ! command_exists ls; then
+            error_exit "No suitable directory listing command found (eza, exa, or ls)"
         fi
         
         debug "Showing enhanced directory listing"

@@ -14,6 +14,11 @@ data
 .env.*
 *.local
 
+# App runtime state and manual exports
+configs/lazygit/state.yaml
+configs/raycast/
+configs/rectangle_pro/
+
 
 # Neovim-specific files
 .neoconf.json

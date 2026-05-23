@@ -26,7 +26,7 @@ The one-liner uses the `develop` branch by default. Override it with `DOTFILES_B
 - Installs Xcode Command Line Tools if needed.
 - Installs Homebrew if needed.
 - Runs `brew bundle --file Brewfile`.
-- Symlinks shell, git, tmux, Alacritty, and LazyGit config.
+- Symlinks shell, git, tmux, Ghostty, LazyGit, and Navi config.
 - Copies helper scripts into `~/bin`.
 - Installs Powerlevel10k and tmux plugin manager.
 - Creates local-only files for machine-specific settings.
@@ -57,6 +57,12 @@ Git identity goes here:
 ~/.gitconfig.local
 ```
 
+Navi config is managed at:
+
+```bash
+~/.config/navi/config.yaml
+```
+
 Example:
 
 ```gitconfig
@@ -74,8 +80,9 @@ Example:
 - [.aliases](.aliases): aliases
 - [.gitconfig](.gitconfig): shared git defaults
 - [tmux/](tmux): tmux config
-- [alacritty/](alacritty): Alacritty config
-- [configs/](configs): app config exports
+- [configs/ghostty/config.ghostty](configs/ghostty/config.ghostty): Ghostty config
+- [configs/lazygit/config.yaml](configs/lazygit/config.yaml): shared LazyGit config
+- [configs/navi/](configs/navi): Navi config and local cheatsheets
 - [scripts/](scripts): helper scripts copied to `~/bin`
 
 ## After Install

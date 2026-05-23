@@ -1,0 +1,23 @@
+# /Users/esquire/.config/tmuxinator/dev.yml
+
+name: dev
+root: ~/
+
+windows:
+  - zsh:
+      panes:
+        -
+  - llm:
+      panes:
+        - llm chat
+  - lazygit:
+      panes:
+        - lazygit; n
+  - code:
+      layout: main-vertical
+      panes:
+        - cd ~/code/
+        - cd ~/code/
+  - x-in-y:
+      panes:
+        - cd ~/code/x-in-y; nvim .

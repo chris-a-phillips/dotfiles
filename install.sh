@@ -156,8 +156,10 @@ install_dotfiles() {
   link_file "$DOTFILES_DIR/.gitconfig" "$HOME/.gitconfig"
   link_file "$DOTFILES_DIR/.p10k.zsh" "$HOME/.p10k.zsh"
   link_file "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.tmux.conf"
-  link_file "$DOTFILES_DIR/alacritty/alacritty.toml" "$HOME/.config/alacritty/alacritty.toml"
+  link_file "$DOTFILES_DIR/configs/ghostty/config.ghostty" "$HOME/Library/Application Support/com.mitchellh.ghostty/config.ghostty"
   link_file "$DOTFILES_DIR/configs/lazygit/config.yaml" "$HOME/.config/lazygit/config.yml"
+  link_file "$DOTFILES_DIR/configs/navi/config.yaml" "$HOME/.config/navi/config.yaml"
+  link_file "$DOTFILES_DIR/configs/navi/cheats" "$HOME/.config/navi/cheats"
 
   run mkdir -p "$HOME/.config/tmux"
   link_file "$DOTFILES_DIR/tmux/statusline.conf" "$HOME/.config/tmux/statusline.conf"
