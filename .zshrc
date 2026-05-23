@@ -15,8 +15,8 @@ fi
 # Combine all PATH additions into a single operation
 export PATH="$HOME/bin:/usr/local/bin:/opt/homebrew/bin:$HOME/.dotfiles/scripts:/Applications/Alacritty.app/Contents/MacOS:$HOME/.local/bin:$PATH"
 
-# Set repository path for easy access
-export SOURCE_REPO_PATH="/Users/chris.phillips/environment/dim/draw/integration-pipelines"
+# Set repository path for easy access without baking a machine-specific work path into the repo.
+export SOURCE_REPO_PATH="${SOURCE_REPO_PATH:-$HOME/src}"
 
 # Language environment variable to prevent locale-related warnings
 export LANG=en_US.UTF-8
@@ -43,9 +43,11 @@ bindkey '^P' up-history
 # -------------------------------
 # Theme and Prompt Customization
 # -------------------------------
-# Set theme to Powerlevel10k and load theme
-source ~/powerlevel10k/powerlevel10k.zsh-theme
-ZSH_THEME="powerlevel10k/powerlevel10k"
+# Set theme to Powerlevel10k when it is installed.
+if [ -f ~/powerlevel10k/powerlevel10k.zsh-theme ]; then
+  source ~/powerlevel10k/powerlevel10k.zsh-theme
+  ZSH_THEME="powerlevel10k/powerlevel10k"
+fi
 
 # Load Powerlevel10k configuration
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
@@ -94,3 +96,5 @@ setopt INC_APPEND_HISTORY      # Immediately write to file
 setopt SHARE_HISTORY           # Share across sessions
 setopt HIST_REDUCE_BLANKS      # Trim extra spaces
 
+# Keep machine-local exports and secrets out of git.
+[ -f "$HOME/.dotfiles/.local.zsh" ] && source "$HOME/.dotfiles/.local.zsh"

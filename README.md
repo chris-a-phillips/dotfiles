@@ -1,263 +1,95 @@
 # Dotfiles
 
-A comprehensive dotfiles setup with multiple configuration options for different use cases.
+Small macOS-first dotfiles for bootstrapping a new laptop without a clever framework getting in the way.
 
-## 🚀 Quick Start
+## Fresh Laptop
 
-### One-Liner Installation
+Manual setup:
+
 ```bash
-# Install with one command
-curl -fsSL https://raw.githubusercontent.com/chris-a-phillips/dotfiles/main/quick-setup.sh | bash
-```
-
-### Manual Installation
-```bash
-# Clone the repository
+xcode-select --install
 git clone https://github.com/chris-a-phillips/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
-
-# Run the installer
 ./install.sh
 ```
 
-## 📋 Features
-
-### 🎯 Three Configuration Types
-
-1. **Personal** - Minimal setup for personal development
-   - Core development tools
-   - Essential productivity apps
-   - Essential development tools
-   - No cloud tools or extensive fonts
-
-2. **Work** - Comprehensive setup with cloud tools
-   - All personal features plus:
-   - AWS CLI and SAM
-   - Docker and Kubernetes tools
-   - Extensive Nerd Font collection
-   - Remote development tools
-   - Unity development tools
-
-3. **Default** - Basic setup with essential tools
-   - Minimal core tools
-   - Basic development environment
-   - Essential development tools
-   - No advanced features
-
-### 🛠 What Gets Installed
-
-#### Core Tools
-- **Terminal**: tmux, fzf, exa, bat, ripgrep
-- **Development**: git, neovim, node, python, rust, go
-- **Package Managers**: Homebrew, pip, npm, cargo
-- **Version Managers**: pyenv, nvm, asdf
-
-#### Productivity Apps
-- **Window Management**: alt-tab, rectangle-pro
-- **Menu Bar**: hiddenbar, itsycal
-- **Terminal**: alacritty, iTerm2
-- **Development**: VS Code, Postman, DB Browser
-
-#### Development Tools
-- **Git**: git-delta, lazygit, git-lfs
-- **Cloud**: AWS CLI, Docker, Kubernetes, Terraform
-- **Databases**: PostgreSQL, MongoDB, MySQL, Redis
-- **Languages**: Python, Node.js, Rust, Go, C#
-
-#### Development Tools
-- **Git**: git-delta, lazygit, git-lfs
-- **Cloud**: AWS CLI, Docker, Kubernetes, Terraform
-- **Databases**: PostgreSQL, MongoDB, MySQL, Redis
-- **Languages**: Python, Node.js, Rust, Go, C#
-
-## 🎛 Configuration System
-
-### JSON-Based Configuration
-
-Each configuration is defined in a JSON file under `configs/`:
-
-```json
-{
-  "name": "Personal",
-  "description": "Minimal setup for personal development",
-  "brewfile": "Brewfile-personal",
-  "features": {
-    "core_tools": true,
-    "development": true,
-    "cloud_tools": false,
-    "extensive_fonts": false
-  },
-  "packages": {
-    "additional_brews": ["package1", "package2"],
-    "additional_casks": ["app1", "app2"],
-    "additional_casks": ["app1", "app2"]
-  }
-}
-```
-
-### Configuration Manager
-
-Use the configuration manager to manage your setups:
+One-liner setup:
 
 ```bash
-# List all configurations
-./scripts/config-manager list
-
-# Show details of a configuration
-./scripts/config-manager show personal
-
-# Create a new configuration
-./scripts/config-manager create gaming
-
-# Compare two configurations
-./scripts/config-manager compare personal work
-
-# Validate a configuration
-./scripts/config-manager validate work
+curl -fsSL https://raw.githubusercontent.com/chris-a-phillips/dotfiles/develop/quick-setup.sh | bash
 ```
 
-## 📁 Project Structure
+The one-liner uses the `develop` branch by default. Override it with `DOTFILES_BRANCH=main` if you later move the stable setup there.
 
-```
-.dotfiles/
-├── install.sh                 # Main installer script
-├── configs/                   # Configuration files
-│   ├── personal.json         # Personal configuration
-│   ├── work.json            # Work configuration
-│   └── default.json         # Default configuration
-├── Brewfile-personal         # Personal Brewfile
-├── Brewfile-work            # Work Brewfile
-├── Brewfile-default         # Default Brewfile
-├── scripts/                 # Utility scripts
-│   ├── config-manager       # Configuration management
-│   ├── activate             # Activate environment
-│   ├── backup              # Backup current setup
-│   └── ...                 # Other utilities
-├── tmux/                   # Tmux configuration
-├── alacritty/              # Alacritty configuration
-├── app_configs/            # App-specific configs
-└── ...                     # Other config files
-```
+## What Install Does
 
-## 🔧 Installation Process
+- Installs Xcode Command Line Tools if needed.
+- Installs Homebrew if needed.
+- Runs `brew bundle --file Brewfile`.
+- Symlinks shell, git, tmux, Alacritty, and LazyGit config.
+- Copies helper scripts into `~/bin`.
+- Installs Powerlevel10k and tmux plugin manager.
+- Creates local-only files for machine-specific settings.
 
-The installer performs the following steps:
+Existing files are moved into `~/.dotfiles-backup/<timestamp>/` before links are created.
 
-1. **Configuration Selection** - Choose your setup type
-2. **OS Detection** - Automatically detect macOS/Linux
-3. **Package Installation** - Install Homebrew and packages
-4. **Font Installation** - Install Nerd Fonts
-5. **App Configuration** - Restore app settings
-6. **Dotfiles Setup** - Create symlinks and copy scripts
-7. **Development Tools** - Install additional tools
-8. **Git & SSH Setup** - Configure version control
-9. **macOS Defaults** - Configure system preferences
-10. **Verification** - Verify installation success
-
-## 🎨 Customization
-
-### Creating Custom Configurations
-
-1. Create a new configuration:
-   ```bash
-   ./scripts/config-manager create myconfig
-   ```
-
-2. Edit the configuration file:
-   ```bash
-   vim configs/myconfig.json
-   ```
-
-3. Create a corresponding Brewfile:
-   ```bash
-   cp Brewfile-default Brewfile-myconfig
-   vim Brewfile-myconfig
-   ```
-
-4. Install with your custom configuration:
-   ```bash
-   ./install.sh
-   # Choose option 4 (Custom) and enter "myconfig"
-   ```
-
-### Adding Packages
-
-To add packages to a configuration:
-
-1. **Brew packages**: Add to the corresponding Brewfile
-2. **Additional packages**: Add to the `additional_brews` array in the JSON config
-3. **Cask apps**: Add to the `additional_casks` array
-4. **Cask apps**: Add to the `additional_casks` array
-
-## 🚀 Available Scripts
-
-After installation, these scripts are available in your `~/bin`:
-
-- `activate` - Activate the development environment
-- `backup` - Backup current dotfiles
-- `gsw` - Git switch with fuzzy finder
-- `gbnew` - Create new git branch
-- `help` - Show available commands
-- `mkcd` - Make directory and cd into it
-- `pull-all` - Pull all git repositories
-- `config-manager` - Manage configurations
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-1. **Permission Denied**: Make sure scripts are executable
-   ```bash
-   chmod +x scripts/*
-   ```
-
-2. **Brewfile Not Found**: Check that the Brewfile exists
-   ```bash
-   ls -la Brewfile-*
-   ```
-
-3. **Configuration Errors**: Validate your configuration
-   ```bash
-   ./scripts/config-manager validate personal
-   ```
-
-4. **Symlink Issues**: Check if files are already symlinks
-   ```bash
-   ls -la ~/.zshrc ~/.gitconfig ~/.tmux.conf
-   ```
-
-### Verification
-
-After installation, verify everything works:
+## Useful Flags
 
 ```bash
-# Check symlinks
-ls -la ~/.zshrc ~/.gitconfig ~/.tmux.conf
-
-# Test scripts
-help
-tmux
-nvim
-
-# Check packages
-brew list | wc -l
+./install.sh --no-brew
+./install.sh --dry-run
+./install.sh --help
 ```
 
-## 🤝 Contributing
+## Local Files
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test with different configurations
-5. Submit a pull request
+Keep secrets, work-only paths, and machine identity out of git.
 
-## 📝 License
+Shell exports go here:
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```bash
+~/.dotfiles/.local.zsh
+```
 
-## 🙏 Acknowledgments
+Git identity goes here:
 
-- [Homebrew](https://brew.sh/) for package management
-- [LazyVim](https://www.lazyvim.org/) for Neovim configuration
-- [Powerlevel10k](https://github.com/romkatv/powerlevel10k) for terminal theme
-- [Nerd Fonts](https://www.nerdfonts.com/) for programming fonts
+```bash
+~/.gitconfig.local
+```
+
+Example:
+
+```gitconfig
+[user]
+	name = Chris Phillips
+	email = you@example.com
+```
+
+## Repo Layout
+
+- [install.sh](install.sh): main bootstrap script
+- [quick-setup.sh](quick-setup.sh): clone/update wrapper for a fresh Mac
+- [Brewfile](Brewfile): Homebrew packages, casks, and VS Code extensions
+- [.zshrc](.zshrc): shell setup
+- [.aliases](.aliases): aliases
+- [.gitconfig](.gitconfig): shared git defaults
+- [tmux/](tmux): tmux config
+- [alacritty/](alacritty): Alacritty config
+- [configs/](configs): app config exports
+- [scripts/](scripts): helper scripts copied to `~/bin`
+
+## After Install
+
+Restart the terminal, then check:
+
+```bash
+command -v gst gsw gbnew greset help mkcd backup pull-all
+tmux -V
+nvim --version
+```
+
+In tmux, press `prefix + I` to install plugins.
+
+## Security Notes
+
+Do not commit API keys, app licenses, SSH keys, or work credentials. If one ever lands in git history, rotate it even after removing it from the current files.

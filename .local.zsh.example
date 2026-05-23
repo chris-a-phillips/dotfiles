@@ -1,0 +1,5 @@
+# Copy local shell exports into ~/.dotfiles/.local.zsh.
+# This file is only an example; .local.zsh is ignored by git.
+#
+# export SERVICE_API_KEY="..."
+# export SOURCE_REPO_PATH="$HOME/src/work"

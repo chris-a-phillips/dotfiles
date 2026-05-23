@@ -7,6 +7,13 @@ foo.*
 *.log
 data
 
+# Machine-local shell exports and secrets
+.local.zsh
+.gitconfig.local
+.env
+.env.*
+*.local
+
 
 # Neovim-specific files
 .neoconf.json
@@ -20,4 +27,3 @@ stylua.toml
 
 # Miscellaneous
 .vscode/
-
