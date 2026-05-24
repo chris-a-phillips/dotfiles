@@ -9,14 +9,15 @@
 #   file_name?: string
 # Outputs:
 #   Writes help information to terminal
+#   Always targets scripts in the same directory as this help script
 #######################################
 
 # Get script description from file
 get_script_description() {
     local file="$1"
     if [ -f "$file" ] && [ -r "$file" ]; then
-        # Look for description in comments (lines starting with #)
-        local desc=$(grep -E '^#.*' "$file" | head -n 5 | grep -v '^#!/' | sed 's/^# //' | head -n 1)
+        # Look for the main docstring (first descriptive comment after shebang and empty lines)
+        local desc=$(grep -E '^# ' "$file" | grep -v '^#!/' | head -n 1 | sed 's/^# //')
         if [ -n "$desc" ]; then
             echo "$desc"
         else
@@ -32,13 +33,17 @@ display_help() {
     echo -e "${BBLUE}Available Scripts:${NC}"
     echo "=================="
     
-    # Get current directory name for display
-    local dir_name=$(basename "$PWD")
+    # Get the directory where this help script is located
+    local script_dir=$(get_script_dir)
+    local dir_name=$(basename "$script_dir")
     
-    # Find all executable files in current directory
+    echo -e "${GRAY}Scripts directory: $script_dir${NC}"
+    echo ""
+    
+    # Find all executable files in the scripts directory
     local found_scripts=false
     
-    for file in ./*; do
+    for file in "$script_dir"/*; do
         # Skip if not a file or not executable
         if [ ! -f "$file" ] || [ ! -x "$file" ]; then
             continue
@@ -46,7 +51,7 @@ display_help() {
         
         # Skip utility files
         local basename_file=$(basename "$file")
-        if [[ "$basename_file" == "_utils" || "$basename_file" == "_bash_template" ]]; then
+        if [[ "$basename_file" == "_utils" || "$basename_file" == "_bash_template" || "$basename_file" == "help" ]]; then
             continue
         fi
         
@@ -56,7 +61,7 @@ display_help() {
     done
     
     if [ "$found_scripts" = false ]; then
-        echo -e "${YELLOW}No executable scripts found in current directory${NC}"
+        echo -e "${YELLOW}No executable scripts found in scripts directory${NC}"
     fi
     
     echo ""
@@ -67,10 +72,11 @@ display_help() {
 # Display detailed help for specific script
 display_help_full() {
     local script_name="$1"
-    local script_path="./$script_name"
+    local script_dir=$(get_script_dir)
+    local script_path="$script_dir/$script_name"
     
     if [ ! -f "$script_path" ]; then
-        error_exit "Script not found: $script_name"
+        error_exit "Script not found: $script_name (searched in: $script_dir)"
     fi
     
     if [ ! -x "$script_path" ]; then
@@ -79,6 +85,8 @@ display_help_full() {
     
     echo -e "${BBLUE}Detailed help for: $script_name${NC}"
     echo "================================"
+    echo -e "${GRAY}Script location: $script_path${NC}"
+    echo ""
     
     # Show script description
     local desc=$(get_script_description "$script_path")

@@ -1,191 +1,171 @@
-#!/bin/bash
-#
-# Update all git repositories in current directory
-. _utils
+#!/usr/bin/env bash
 
-#######################################
-# Update all git repositories in current directory
-# Arguments:
-#   None
-# Outputs:
-#   None
-#######################################
+set -u
 
-# Check if directory is a git repository
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/_utils" ]]; then
+  # shellcheck source=/dev/null
+  . "$SCRIPT_DIR/_utils"
+elif command -v _utils >/dev/null 2>&1; then
+  # shellcheck source=/dev/null
+  . _utils
+fi
+
+: "${RED:=}"
+: "${GREEN:=}"
+: "${YELLOW:=}"
+: "${BLUE:=}"
+: "${CYAN:=}"
+: "${NC:=}"
+: "${BBLUE:=$BLUE}"
+
+updated_count=0
+skipped_count=0
+failed_count=0
+total_repos=0
+
+usage() {
+  cat <<'EOF'
+Usage: pull-all [directory]
+
+Pull each direct child git repository under directory.
+Defaults to the current directory.
+
+Only clean repositories with an upstream branch are pulled.
+Pulls use --ff-only so the script never creates merge commits.
+EOF
+}
+
+print_status() {
+  local color="$1"
+  local status="$2"
+  local message="$3"
+  printf '%b%-8s%b %s\n' "$color" "$status" "$NC" "$message"
+}
+
 is_git_repo() {
-    [ -d "$1/.git" ]
+  [[ "$(git -C "$1" rev-parse --is-inside-work-tree 2>/dev/null)" == "true" ]]
 }
 
-# Get current branch of repository
-get_current_branch() {
-    local repo_path="$1"
-    if is_git_repo "$repo_path"; then
-        (cd "$repo_path" && git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null)
-    else
-        echo ""
-    fi
+current_branch() {
+  git -C "$1" branch --show-current 2>/dev/null
 }
 
-# Get default branch of repository
-get_default_branch() {
-    local repo_path="$1"
-    if is_git_repo "$repo_path"; then
-        # Try to get the default branch from remote HEAD (most reliable)
-        local default_branch=$(cd "$repo_path" && git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-        
-        # If that fails, try git config
-        if [ -z "$default_branch" ]; then
-            default_branch=$(cd "$repo_path" && git config --get init.defaultBranch 2>/dev/null)
-        fi
-        
-        # If still not found, check if main or master exists
-        if [ -z "$default_branch" ]; then
-            if (cd "$repo_path" && git show-ref --verify --quiet refs/heads/main); then
-                default_branch="main"
-            elif (cd "$repo_path" && git show-ref --verify --quiet refs/heads/master); then
-                default_branch="master"
-            elif (cd "$repo_path" && git show-ref --verify --quiet refs/heads/develop); then
-                default_branch="develop"
-            else
-                # Fallback to current branch if no default found
-                default_branch=$(get_current_branch "$repo_path")
-            fi
-        fi
-        
-        echo "$default_branch"
-    else
-        echo ""
-    fi
+upstream_branch() {
+  git -C "$1" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null
 }
 
-# Check if repository has uncommitted changes
 has_uncommitted_changes() {
-    local repo_path="$1"
-    if is_git_repo "$repo_path"; then
-        (cd "$repo_path" && git status --porcelain 2>/dev/null | grep -q .)
-    else
-        false
-    fi
+  [[ -n "$(git -C "$1" status --porcelain 2>/dev/null)" ]]
 }
 
-# Check if repository has unpushed commits
 has_unpushed_commits() {
-    local repo_path="$1"
-    if is_git_repo "$repo_path"; then
-        local current_branch=$(get_current_branch "$repo_path")
-        local default_branch=$(get_default_branch "$repo_path")
-        if [ -n "$default_branch" ] && [ "$current_branch" = "$default_branch" ]; then
-            (cd "$repo_path" && git rev-list HEAD...origin/$default_branch --count 2>/dev/null | grep -q -v "^0$")
-        else
-            false
-        fi
-    else
-        false
-    fi
+  local repo_path="$1"
+  local upstream="$2"
+
+  git -C "$repo_path" rev-list --count "$upstream"..HEAD 2>/dev/null | grep -q -v '^0$'
 }
 
-# Update a single repository
 update_repo() {
-    local repo_path="$1"
-    local repo_name=$(basename "$repo_path")
-    local current_branch=$(get_current_branch "$repo_path")
-    local default_branch=$(get_default_branch "$repo_path")
-    
-    echo -n "Checking $repo_name... "
-    
-    # Check if it's a git repository
-    if ! is_git_repo "$repo_path"; then
-        echo -e "${YELLOW}SKIP (not a git repo)${NC}"
-        return 0
-    fi
-    
-    # Check if we have a valid default branch
-    if [ -z "$default_branch" ]; then
-        echo -e "${YELLOW}SKIP (no default branch found)${NC}"
-        return 0
-    fi
-    
-    # Check if on default branch
-    if [ "$current_branch" = "$default_branch" ]; then
-        # Check for uncommitted changes
-        if has_uncommitted_changes "$repo_path"; then
-            echo -e "${YELLOW}SKIP (has uncommitted changes)${NC}"
-            return 0
-        fi
-        
-        # Check for unpushed commits
-        if has_unpushed_commits "$repo_path"; then
-            echo -e "${YELLOW}SKIP (has unpushed commits)${NC}"
-            return 0
-        fi
-        
-        echo -n "Updating $repo_name... "
-        
-        # Fetch latest changes first
-        if ! (cd "$repo_path" && git fetch origin >/dev/null 2>&1); then
-            echo -e "${RED}FAILED (fetch failed)${NC}"
-            return 1
-        fi
-        
-        # Pull latest changes
-        if (cd "$repo_path" && git pull origin "$default_branch" >/dev/null 2>&1); then
-            echo -e "${GREEN}DONE${NC}"
-            return 0
-        else
-            echo -e "${RED}FAILED (pull failed)${NC}"
-            return 1
-        fi
-    else
-        echo -e "${YELLOW}SKIP (on branch $current_branch, not $default_branch)${NC}"
-        return 0
-    fi
+  local repo_path="$1"
+  local repo_name
+  local branch
+  local upstream
+
+  repo_name="$(basename "$repo_path")"
+
+  if ! is_git_repo "$repo_path"; then
+    return 3
+  fi
+
+  ((total_repos++))
+
+  branch="$(current_branch "$repo_path")"
+  if [[ -z "$branch" ]]; then
+    print_status "$YELLOW" "SKIP" "$repo_name is detached"
+    ((skipped_count++))
+    return 0
+  fi
+
+  upstream="$(upstream_branch "$repo_path")"
+  if [[ -z "$upstream" ]]; then
+    print_status "$YELLOW" "SKIP" "$repo_name:$branch has no upstream"
+    ((skipped_count++))
+    return 0
+  fi
+
+  if has_uncommitted_changes "$repo_path"; then
+    print_status "$YELLOW" "SKIP" "$repo_name:$branch has uncommitted changes"
+    ((skipped_count++))
+    return 0
+  fi
+
+  printf 'Checking %s:%s... ' "$repo_name" "$branch"
+
+  if ! git -C "$repo_path" fetch --quiet --prune; then
+    printf '%bFAILED%b fetch failed\n' "$RED" "$NC"
+    ((failed_count++))
+    return 1
+  fi
+
+  if has_unpushed_commits "$repo_path" "$upstream"; then
+    printf '%bSKIP%b has unpushed commits\n' "$YELLOW" "$NC"
+    ((skipped_count++))
+    return 0
+  fi
+
+  if git -C "$repo_path" pull --ff-only --quiet; then
+    printf '%bDONE%b\n' "$GREEN" "$NC"
+    ((updated_count++))
+    return 0
+  fi
+
+  printf '%bFAILED%b pull failed\n' "$RED" "$NC"
+  ((failed_count++))
+  return 1
 }
 
-# Main function to update all repositories
 main() {
-    local updated_count=0
-    local failed_count=0
-    local skipped_count=0
-    local total_repos=0
-    
-    echo -e "${BBLUE}Updating all repositories in: $(pwd)${NC}"
-    echo "=========================================="
-    
-    # Find all subdirectories
-    for repo in */; do
-        # Skip if not a directory
-        if [ ! -d "$repo" ]; then
-            continue
-        fi
-        
-        # Remove trailing slash
-        repo=${repo%/}
-        ((total_repos++))
-        
-        if update_repo "$repo"; then
-            local current_branch=$(get_current_branch "$repo")
-            local default_branch=$(get_default_branch "$repo")
-            
-            if [ "$current_branch" = "$default_branch" ] && [ -n "$current_branch" ] && [ -n "$default_branch" ]; then
-                ((updated_count++))
-            else
-                ((skipped_count++))
-            fi
-        else
-            ((failed_count++))
-        fi
-    done
-    
-    # Summary
-    echo ""
-    echo -e "${BBLUE}Summary:${NC}"
-    echo -e "${GREEN}Updated: $updated_count${NC}"
-    echo -e "${YELLOW}Skipped: $skipped_count${NC}"
-    if [ $failed_count -gt 0 ]; then
-        echo -e "${RED}Failed: $failed_count${NC}"
-    fi
-    echo -e "${CYAN}Total repositories found: $total_repos${NC}"
+  local root="${1:-.}"
+  local repo
+  local found_child=0
+
+  case "$root" in
+    -h|--help)
+      usage
+      return 0
+      ;;
+  esac
+
+  if [[ ! -d "$root" ]]; then
+    printf '%berror:%b directory not found: %s\n' "$RED" "$NC" "$root" >&2
+    return 1
+  fi
+
+  root="$(cd "$root" && pwd)"
+
+  printf '%bUpdating git repositories under:%b %s\n' "$BBLUE" "$NC" "$root"
+  printf '%s\n' "=========================================="
+
+  for repo in "$root"/*; do
+    [[ -d "$repo" ]] || continue
+    found_child=1
+    update_repo "$repo" || true
+  done
+
+  if [[ "$found_child" -eq 0 ]]; then
+    print_status "$YELLOW" "SKIP" "no child directories found"
+  fi
+
+  printf '\n%bSummary:%b\n' "$BBLUE" "$NC"
+  printf '%bUpdated:%b %d\n' "$GREEN" "$NC" "$updated_count"
+  printf '%bSkipped:%b %d\n' "$YELLOW" "$NC" "$skipped_count"
+  if [[ "$failed_count" -gt 0 ]]; then
+    printf '%bFailed:%b %d\n' "$RED" "$NC" "$failed_count"
+  fi
+  printf '%bRepositories found:%b %d\n' "$CYAN" "$NC" "$total_repos"
+
+  [[ "$failed_count" -eq 0 ]]
 }
 
-# Execute main function
-main
+main "$@"

@@ -6,13 +6,10 @@
 #######################################
 # Create new git branch
 # Arguments:
-#   branch_name?: string
+#   $1 - Branch name (optional, will prompt if not provided)
 # Outputs:
-#   None
+#   Creates and switches to new branch
 #######################################
-
-# Get current branch
-current="$(get_current_branch)"
 
 # Function to create branch from default
 create_from_default() {
@@ -25,6 +22,7 @@ create_from_default() {
 # Function to create branch from current
 create_from_current() {
     local branch_name="$1"
+    local current=$(get_current_branch)
     echo -e "Creating ${YELLOW}$branch_name${NC} from current branch ${BBLUE}$current${NC}..."
     git checkout -b "$branch_name"
 }
@@ -33,6 +31,7 @@ create_from_current() {
 ask_for_source() {
     local branch_name="$1"
     local default_branch=$(get_default_branch)
+    local current=$(get_current_branch)
     echo -e "Create ${YELLOW}$branch_name${NC} from ${BBLUE}$current (c)${NC} or from ${RED}$default_branch (d)${NC}?"
     read -p "current(c) / $default_branch(d) ?" choice
     case "$choice" in
@@ -42,28 +41,35 @@ ask_for_source() {
     esac
 }
 
-# Main logic
-if [ -z "${1}" ]; then
+main() {
+    # Check if we're in a git repository
+    if ! is_git_repo; then
+        error_exit "Not in a git repository"
+    fi
+    
+    local current=$(get_current_branch)
+    local branch_name="$1"
+    
     # No branch name provided, ask for it
-    echo -e "Name of new branch?"
-    read branch_name
+    if [ -z "$branch_name" ]; then
+        echo -e "Name of new branch?"
+        read branch_name
+        
+        if [ -z "$branch_name" ]; then
+            error_exit "Branch name is required"
+        fi
+    fi
     
     # If already on default branch, just create from current
-    if [ "$current" == "$(get_default_branch)" ]; then
+    local default_branch=$(get_default_branch)
+    if [ "$current" == "$default_branch" ]; then
         create_from_current "$branch_name"
     else
         # Ask user which branch to create from
         ask_for_source "$branch_name"
     fi
-else
-    # Branch name provided as argument
-    branch_name="$1"
     
-    # If already on default branch, just create from current
-    if [ "$current" == "$(get_default_branch)" ]; then
-        create_from_current "$branch_name"
-    else
-        # Ask user which branch to create from
-        ask_for_source "$branch_name"
-    fi
-fi
+    print_success "Branch '$branch_name' created and checked out successfully!"
+}
+
+main "$@"

@@ -1,0 +1,24 @@
+# THIS IS EXPERIMENTAL
+# the navi config file schema may change in future navi releases
+
+style:
+  tag:
+    color: cyan
+    width_percentage: 26
+    min_width: 20
+  comment:
+    color: blue
+    width_percentage: 42
+    min_width: 45
+  snippet:
+    color: white
+
+finder:
+  command: fzf
+
+cheats:
+  paths:
+    - ~/.config/navi/cheats
+
+shell:
+  command: bash

@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# Clean branch conflicts
+. _utils
+
+#######################################
+# Script to remove unwanted changes from another branch that accidentally got into your branch
+# Arguments:
+#   $1 - Other branch name to clean from
+#   $2+ - Specific files to clean (optional, if not provided will clean all common files)
+# Outputs:
+#   Resets specified files to their state in base branch
+#######################################
+
+main() {
+    local OTHER_BRANCH="$1"
+    local CURRENT_BRANCH=$(git branch --show-current)
+    local BASE_BRANCH="${BASE_BRANCH:-develop}"
+    shift  # Remove first argument, rest are files
+
+    if [ -z "$OTHER_BRANCH" ]; then
+        error_exit "Usage: $0 <other-branch-name> [specific-files...]\nExample: $0 OC-7091\nExample: $0 OC-7091 src/components/some-file.tsx"
+    fi
+
+    echo "🧹 Cleaning unwanted changes from $OTHER_BRANCH in $CURRENT_BRANCH"
+    echo
+
+    # If specific files are provided, use those. Otherwise, find common files.
+    local FILES_TO_CLEAN
+    if [ $# -gt 0 ]; then
+        FILES_TO_CLEAN="$@"
+        echo "📁 Files specified for cleaning:"
+        printf '   %s\n' "$@"
+    else
+        FILES_TO_CLEAN=$(comm -12 <(git diff $BASE_BRANCH..$OTHER_BRANCH --name-only | sort) <(git diff $BASE_BRANCH --name-only | sort))
+        if [ -z "$FILES_TO_CLEAN" ]; then
+            echo "✅ No common files found - nothing to clean!"
+            exit 0
+        fi
+        echo "📁 Common files that will be cleaned:"
+        echo "$FILES_TO_CLEAN" | sed 's/^/   /'
+    fi
+
+    echo
+    read -p "⚠️  This will reset the above files to their state in $BASE_BRANCH. Continue? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Aborted"
+        exit 0
+    fi
+
+    echo "🔄 Resetting files to $BASE_BRANCH state..."
+    echo "$FILES_TO_CLEAN" | while read -r file; do
+        if [ -n "$file" ]; then
+            echo "   Resetting $file"
+            git checkout $BASE_BRANCH -- "$file"
+        fi
+    done
+
+    echo
+    echo "✅ Files have been reset to $BASE_BRANCH state"
+    echo "🔍 Review the changes with: git diff"
+    echo "💾 Commit when ready with: git add . && git commit -m 'Remove unwanted changes from $OTHER_BRANCH'"
+}
+
+main "$@"

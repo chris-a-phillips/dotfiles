@@ -1,0 +1,47 @@
+% scripts, local
+
+# Show all helper scripts
+help
+
+# Show help for a specific helper script
+help <script>
+
+# Activate or create a Python virtual environment
+activate
+
+# Create and enter a directory
+mkcd <directory_name>
+
+# Reveal a file or folder in Finder
+finder-open <path>
+
+# Pull all direct child git repositories under the current folder
+pull-all
+
+# Pull all direct child git repositories under a chosen folder
+pull-all <directory>
+
+# Open this dotfiles repo
+cd ~/.dotfiles
+
+# Open the Neovim config repo
+cd ~/.config/nvim
+
+# Open the Navi config folder
+cd ~/.config/navi
+
+# Start the dotfiles tmuxinator session
+tmuxinator start dotfiles
+
+# Start a tmuxinator session for the current repo
+PROJECT_DIR="$PWD" tmuxinator start repo
+
+# Check the dotfiles install script syntax
+bash -n ~/.dotfiles/install.sh
+
+# Run the dotfiles install script
+~/.dotfiles/install.sh
+
+$ script: find ~/bin ~/.dotfiles/scripts -maxdepth 1 -type f -perm -111 -exec basename {} \; 2>/dev/null | sort -u
+$ path: find . -maxdepth 3 -mindepth 1 2>/dev/null | sed 's#^\./##' | sort
+$ directory: printf "$HOME\n$HOME/code\n$HOME/environment\n$HOME/.dotfiles\n$HOME/.config/nvim\n$HOME/.config/navi\n"

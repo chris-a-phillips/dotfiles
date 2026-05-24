@@ -1,0 +1,4 @@
+% local
+
+# print current user
+whoami
