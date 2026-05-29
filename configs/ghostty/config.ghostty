@@ -2,7 +2,8 @@
 
 clipboard-read = allow
 window-theme = ghostty
-background-opacity = 0.85
+background = #000000
+background-opacity = 0.8
 cursor-text = #3E8282
 window-padding-x = 10
 window-padding-y = 10
