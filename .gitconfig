@@ -45,3 +45,6 @@
 
 [include]
 	path = ~/.gitconfig.local
+[user]
+	name = Chris Phillips
+	email = phillipsachris@gmail.com
