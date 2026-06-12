@@ -190,6 +190,7 @@ install_apt_packages() {
     eza
     git-delta
     tmuxinator
+    urlview
   )
   local packages=("${required_packages[@]}")
   local package

@@ -82,5 +82,8 @@ setopt INC_APPEND_HISTORY      # Immediately write to file
 setopt SHARE_HISTORY           # Share across sessions
 setopt HIST_REDUCE_BLANKS      # Trim extra spaces
 
+# Capture the previous command's tmux output for the `vlogs` helper.
+[ -f "$HOME/.dotfiles/scripts/vlogs-hook.zsh" ] && source "$HOME/.dotfiles/scripts/vlogs-hook.zsh"
+
 # Keep machine-local exports and secrets out of git.
 [ -f "$HOME/.dotfiles/.local.zsh" ] && source "$HOME/.dotfiles/.local.zsh"

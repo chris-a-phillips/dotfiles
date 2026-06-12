@@ -68,6 +68,8 @@ brew "tmux"
 brew "tmuxinator"
 # Display directories as trees (with optional color/HTML output)
 brew "tree"
+# URL picker used by tmux-urlview
+brew "urlview"
 
 # PostgreSQL (latest you want)
 brew "postgresql", restart_service: :changed, link: true
