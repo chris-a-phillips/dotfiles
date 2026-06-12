@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Open file in macOS Finder
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Open file in macOS Finder

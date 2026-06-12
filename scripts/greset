@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Interactive git reset --hard through mini cli
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Interactive git reset --hard to previous commits

@@ -15,10 +15,10 @@ windows:
         - cd ~/environment/dim/draw/integration-pipelines; conda activate env
   - lazygit:
       panes:
-        - lazygit
+        - tmux-lazygit
   - llm:
       panes:
-        - llm chat
+        - llm chat --system "Respond with brief answers unless explicitly told otherwise"
   - built-data-pulls:
       panes:
         - cd ~/environment/dim/draw/built-data-pulls/; make auth_prod && make auth_integrations; assume dim

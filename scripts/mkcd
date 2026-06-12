@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Make folder and cd into it in one command
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Make folder and cd into it in one command

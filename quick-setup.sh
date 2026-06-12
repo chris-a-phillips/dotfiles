@@ -3,7 +3,7 @@
 set -euo pipefail
 
 DOTFILES_REPO="${DOTFILES_REPO:-https://github.com/chris-a-phillips/dotfiles.git}"
-DOTFILES_BRANCH="${DOTFILES_BRANCH:-develop}"
+DOTFILES_BRANCH="${DOTFILES_BRANCH:-main}"
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
 
 log() {

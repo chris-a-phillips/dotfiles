@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Branch summary analysis
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Quick script to analyze what changes are in your current branch

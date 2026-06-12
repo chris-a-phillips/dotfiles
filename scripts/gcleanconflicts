@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Clean branch conflicts
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Script to remove unwanted changes from another branch that accidentally got into your branch

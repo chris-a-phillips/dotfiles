@@ -5,6 +5,7 @@ window-theme = ghostty
 background = #000000
 background-opacity = 0.8
 cursor-text = #3E8282
+font-feature = -calt, -liga, -dlig
 window-padding-x = 10
 window-padding-y = 10
 window-padding-balance = true

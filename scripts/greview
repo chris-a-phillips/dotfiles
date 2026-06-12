@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Git review changes
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Git review changes in branch from default branch (usually develop)

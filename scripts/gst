@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Smart git status or directory listing
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Smart git status or directory listing

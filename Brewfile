@@ -13,6 +13,8 @@ brew "eza"
 brew "ffmpeg"
 # Fast, user-friendly alternative to find; used by Snacks explorer/project search
 brew "fd"
+# Load and unload project-specific environment variables as you enter/leave directories
+brew "direnv"
 # Banner-like program prints strings as ASCII art
 brew "figlet"
 # Command-line fuzzy finder written in Go

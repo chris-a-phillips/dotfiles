@@ -4,7 +4,9 @@
 # Usage: ./activate_venv.sh
 
 # Load utility functions
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Activates the virtual environment for the current project.

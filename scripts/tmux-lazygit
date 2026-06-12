@@ -1,0 +1,8 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  exec lazygit "$@"
+fi
+
+printf 'Not in a git repository; skipping lazygit.\n'

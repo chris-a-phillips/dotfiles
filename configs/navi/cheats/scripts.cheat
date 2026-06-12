@@ -34,7 +34,10 @@ cd ~/.config/navi
 tmuxinator start dotfiles
 
 # Start a tmuxinator session for the current repo
-PROJECT_DIR="$PWD" tmuxinator start repo
+tmux-repo
+
+# Start a tmuxinator session for a chosen repo
+tmux-repo <directory>
 
 # Check the dotfiles install script syntax
 bash -n ~/.dotfiles/install.sh

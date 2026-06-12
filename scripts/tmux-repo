@@ -1,0 +1,21 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+repo="${1:-$PWD}"
+
+if [[ ! -d "$repo" ]]; then
+  printf 'error: repo path not found: %s\n' "$repo" >&2
+  exit 1
+fi
+
+repo="$(cd "$repo" && pwd)"
+
+if ! git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  printf 'error: not inside a git repository: %s\n' "$repo" >&2
+  exit 1
+fi
+
+repo="$(git -C "$repo" rev-parse --show-toplevel)"
+session="${TMUX_REPO_SESSION:-$(basename "$repo")}"
+
+PROJECT_DIR="$repo" PROJECT_NAME="$session" tmuxinator start repo

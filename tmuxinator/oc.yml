@@ -9,7 +9,7 @@ windows:
         -
   - llm:
       panes:
-        - llm chat
+        - llm chat --system "Respond with brief answers unless explicitly told otherwise"
   - bapi:
       panes:
         - |
@@ -17,9 +17,7 @@ windows:
           AWS_PROFILE=ProdReadOnly awslogin mysql-shell --db prod-cla-bapi8-us-east-1 --dbuser SamlDbReadAccess
   - lazygit:
       panes:
-        - |
-          lazygit
-          n
+        - tmux-lazygit
   - mini-app:
       root: ~/environment/oc/payment-management-miniapp
       layout: main-vertical

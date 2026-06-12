@@ -17,7 +17,7 @@ windows:
         -
   - git:
       panes:
-        - lazygit
+        - tmux-lazygit
   - navi:
       root: ~/.config/navi
       panes:

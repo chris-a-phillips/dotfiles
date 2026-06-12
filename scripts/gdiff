@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Generate git diff patches
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Generate git diff patches with enhanced features

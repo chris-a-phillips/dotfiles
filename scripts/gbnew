@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Create new git branch
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Create new git branch

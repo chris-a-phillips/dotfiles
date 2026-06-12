@@ -12,8 +12,17 @@ fi
 # -------------------------------
 # Optimized Paths and Environment Variables
 # -------------------------------
-# Combine all PATH additions into a single operation.
-export PATH="$HOME/bin:/usr/local/bin:/opt/homebrew/bin:$HOME/.local/bin:$PATH"
+# Keep user scripts first while allowing macOS, Linux, and WSL package paths.
+typeset -U path PATH
+for dotfiles_path in \
+  "$HOME/bin" \
+  "$HOME/.local/bin" \
+  "/opt/homebrew/bin" \
+  "/usr/local/bin" \
+  "/home/linuxbrew/.linuxbrew/bin"; do
+  [[ -d "$dotfiles_path" ]] && path=("$dotfiles_path" $path)
+done
+unset dotfiles_path
 
 # Language environment variable to prevent locale-related warnings
 export LANG=en_US.UTF-8
@@ -23,6 +32,12 @@ export EDITOR=nvim
 
 # Keep Navi config in a stable, dotfiles-managed location.
 export NAVI_CONFIG="$HOME/.config/navi/config.yaml"
+
+# Automatically load trusted per-project environment files, and unload them
+# when leaving the project directory.
+if command -v direnv >/dev/null 2>&1; then
+  eval "$(direnv hook zsh)"
+fi
 
 # -------------------------------
 # Zsh Aliases (Fast Loading)

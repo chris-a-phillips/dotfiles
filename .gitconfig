@@ -2,7 +2,7 @@
 	defaultBranch = main
 
 [core]
-	editor = code --wait
+	editor = nvim
 	pager = delta
 
 [interactive]
@@ -40,11 +40,6 @@
 [safe]
 	directory = /workspaces
 
-[credential]
-	helper = osxkeychain
-
 [include]
+	path = ~/.gitconfig.platform
 	path = ~/.gitconfig.local
-[user]
-	name = Chris Phillips
-	email = phillipsachris@gmail.com

@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Help script to show docstrings
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Help script to show docstrings

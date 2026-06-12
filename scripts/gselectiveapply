@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Selective apply changes
-. _utils
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+. "$SCRIPT_DIR/_utils"
 
 #######################################
 # Script to cherry-pick specific changes from your branch while avoiding unwanted changes
