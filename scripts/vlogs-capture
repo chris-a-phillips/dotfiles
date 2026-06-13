@@ -182,7 +182,7 @@ finish_capture() {
       truncated=1
     fi
 
-    body="$(tmux capture-pane -pJ -t "$pane" -S "$start_rel" -E "$end_rel" 2>/dev/null || true)"
+    body="$(tmux capture-pane -ep -t "$pane" -S "$start_rel" -E "$end_rel" 2>/dev/null || true)"
   fi
 
   {
