@@ -1,0 +1,236 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+BASE_DIR="${VLOGS_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/vlogs}"
+MAX_LINES="${VLOGS_MAX_LINES:-5000}"
+MAX_HISTORY="${VLOGS_MAX_HISTORY:-10}"
+MAX_AGE_DAYS="${VLOGS_MAX_AGE_DAYS:-7}"
+
+tmux_format='#{session_name}	#{window_name}	#{pane_id}	#{history_size}	#{cursor_y}	#{pane_current_path}'
+
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+in_tmux() {
+  [[ -n "${TMUX:-}" ]] && command_exists tmux
+}
+
+sanitize_path_part() {
+  printf '%s' "$1" |
+    tr '/[:space:]' '---' |
+    sed 's/[^A-Za-z0-9._%+-]/-/g; s/-\{2,\}/-/g; s/^-//; s/-$//'
+}
+
+command_slug() {
+  local command="$1"
+  local slug
+
+  slug="$(
+    printf '%s' "$command" |
+      sed 's/^[[:space:]]*//; s/[[:space:]]*$//' |
+      cut -c 1-80 |
+      tr '[:upper:]' '[:lower:]' |
+      sed 's/[^a-z0-9._+-]/-/g; s/-\{2,\}/-/g; s/^-//; s/-$//'
+  )"
+
+  printf '%s' "${slug:-command}"
+}
+
+should_skip_command() {
+  local command="$1"
+  local trimmed first lower
+
+  [[ -z "$command" ]] && return 0
+  [[ "$command" == " "* ]] && return 0
+
+  trimmed="$(printf '%s' "$command" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+  first="${trimmed%%[[:space:]]*}"
+  lower="$(printf '%s' "$trimmed" | tr '[:upper:]' '[:lower:]')"
+
+  case "$first" in
+    cd|pwd|clear|reset|exit|logout|ls|ll|la|l|vlogs|vlogs-capture|nvim|vim|vi|lazygit|less|more|man|ssh|tmux|top|htop|watch|fzf|navi)
+      return 0
+      ;;
+  esac
+
+  case "$lower" in
+    *password*|*passwd*|*secret*|*token*|*api-key*|*api_key*|*apikey*|*authorization*|*bearer*|export\ *)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
+tmux_state() {
+  tmux display-message -p "$tmux_format"
+}
+
+state_file_for_pane() {
+  local pane_id="${1#%}"
+  printf '%s/state/%s.state' "$BASE_DIR" "$(sanitize_path_part "$pane_id")"
+}
+
+write_state() {
+  local command="$1"
+  local state session window pane history cursor cwd state_file start_abs
+
+  state="$(tmux_state)" || return 0
+  IFS=$'\t' read -r session window pane history cursor cwd <<<"$state"
+  [[ -n "$pane" && -n "$history" && -n "$cursor" ]] || return 0
+
+  state_file="$(state_file_for_pane "$pane")"
+  start_abs=$((history + cursor))
+
+  mkdir -p "$(dirname "$state_file")"
+  {
+    printf '%s\n' "$start_abs"
+    printf '%s\n' "$session"
+    printf '%s\n' "$window"
+    printf '%s\n' "$pane"
+    printf '%s\n' "$cwd"
+    printf '%s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf '%s\n' "$command"
+  } > "$state_file"
+}
+
+remove_state() {
+  local state pane state_file
+
+  state="$(tmux_state 2>/dev/null)" || return 0
+  IFS=$'\t' read -r _ _ pane _ _ _ <<<"$state"
+  [[ -n "$pane" ]] || return 0
+
+  state_file="$(state_file_for_pane "$pane")"
+  rm -f "$state_file"
+}
+
+prune_history() {
+  local history_dir="$1"
+
+  [[ -d "$history_dir" ]] || return 0
+
+  find "$history_dir" -type f -name '*.log' -mtime +"$MAX_AGE_DAYS" -delete 2>/dev/null || true
+
+  local count=0
+  local file
+  while IFS= read -r file; do
+    count=$((count + 1))
+    if ((count > MAX_HISTORY)); then
+      rm -f "$file"
+    fi
+  done < <(find "$history_dir" -type f -name '*.log' -print0 2>/dev/null | xargs -0 ls -1t 2>/dev/null || true)
+}
+
+finish_capture() {
+  local exit_status="${1:-0}"
+  local state session window pane history cursor cwd
+  local state_file start_abs start_session start_window start_pane start_cwd started_at command
+  local session_safe window_safe pane_safe current_dir history_dir timestamp slug
+  local current_file history_file tmp_file end_abs start_capture_abs end_capture_abs start_rel end_rel
+  local truncated=0 body=""
+
+  state="$(tmux_state)" || return 0
+  IFS=$'\t' read -r session window pane history cursor cwd <<<"$state"
+  [[ -n "$pane" && -n "$history" && -n "$cursor" ]] || return 0
+
+  state_file="$(state_file_for_pane "$pane")"
+  [[ -f "$state_file" ]] || return 0
+
+  start_abs="$(sed -n '1p' "$state_file")"
+  start_session="$(sed -n '2p' "$state_file")"
+  start_window="$(sed -n '3p' "$state_file")"
+  start_pane="$(sed -n '4p' "$state_file")"
+  start_cwd="$(sed -n '5p' "$state_file")"
+  started_at="$(sed -n '6p' "$state_file")"
+  command="$(sed -n '7,$p' "$state_file")"
+  rm -f "$state_file"
+
+  [[ "$start_pane" == "$pane" ]] || return 0
+  [[ "$start_abs" =~ ^[0-9]+$ ]] || return 0
+
+  end_abs=$((history + cursor))
+  start_capture_abs=$start_abs
+  end_capture_abs=$((end_abs - 1))
+
+  session_safe="$(sanitize_path_part "$start_session")"
+  window_safe="$(sanitize_path_part "$start_window")"
+  pane_safe="$(sanitize_path_part "$pane")"
+  current_dir="$BASE_DIR/current/$session_safe/$window_safe"
+  history_dir="$BASE_DIR/history/$session_safe/$window_safe/$pane_safe"
+  timestamp="$(date '+%Y-%m-%d_%H-%M-%S')"
+  slug="$(command_slug "$command")"
+  current_file="$current_dir/$pane_safe.log"
+  history_file="$history_dir/$timestamp--$slug.log"
+  tmp_file="$current_file.tmp.$$"
+
+  mkdir -p "$current_dir" "$history_dir"
+
+  if ((end_capture_abs >= start_capture_abs)); then
+    start_rel=$((start_capture_abs - history))
+    end_rel=$((end_capture_abs - history))
+
+    if ((end_rel - start_rel + 1 > MAX_LINES)); then
+      start_rel=$((end_rel - MAX_LINES + 1))
+      truncated=1
+    fi
+
+    if ((start_rel < -history)); then
+      start_rel=$((-history))
+      truncated=1
+    fi
+
+    body="$(tmux capture-pane -ep -t "$pane" -S "$start_rel" -E "$end_rel" 2>/dev/null || true)"
+  fi
+
+  {
+    printf 'command: %s\n' "$command"
+    printf 'exit: %s\n' "$exit_status"
+    printf 'started: %s\n' "$started_at"
+    printf 'captured: %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf 'cwd: %s\n' "$start_cwd"
+    printf 'session: %s\n' "$start_session"
+    printf 'window: %s\n' "$start_window"
+    printf 'pane: %s\n' "$pane"
+    printf 'max_lines: %s\n' "$MAX_LINES"
+    printf 'truncated: %s\n' "$truncated"
+    printf -- '---\n'
+    if [[ -n "$body" ]]; then
+      printf '%s\n' "$body"
+    else
+      printf '(no output captured)\n'
+    fi
+  } > "$tmp_file"
+
+  mv "$tmp_file" "$current_file"
+  cp "$current_file" "$history_file"
+  prune_history "$history_dir"
+}
+
+main() {
+  [[ "${VLOGS_DISABLE:-0}" == "1" ]] && exit 0
+  in_tmux || exit 0
+
+  case "${1:-}" in
+    start)
+      shift
+      if should_skip_command "${1:-}"; then
+        remove_state
+      else
+        write_state "${1:-}"
+      fi
+      ;;
+    finish)
+      shift
+      finish_capture "${1:-0}"
+      ;;
+    *)
+      printf 'usage: vlogs-capture start <command>|finish <exit-status>\n' >&2
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"

@@ -1,0 +1,34 @@
+tt.*
+.tests
+doc/tags
+debug
+.repro
+foo.*
+*.log
+data
+
+# Machine-local shell exports and secrets
+.local.zsh
+.gitconfig.local
+.env
+.env.*
+*.local
+
+# App runtime state and manual exports
+configs/lazygit/state.yaml
+configs/raycast/
+configs/rectangle_pro/
+
+
+# Neovim-specific files
+.neoconf.json
+lazy-lock.json
+lazyvim.json
+stylua.toml
+
+# Potential cache directories
+.cache/
+.local/
+
+# Miscellaneous
+.vscode/

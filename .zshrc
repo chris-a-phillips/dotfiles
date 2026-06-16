@@ -10,18 +10,19 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # -------------------------------
-# Paths and Environment Variables
+# Optimized Paths and Environment Variables
 # -------------------------------
-# Standard path setup with custom directories
-export PATH=$HOME/bin:/usr/local/bin:$PATH
-export PATH=/opt/homebrew/bin:$PATH
-export PATH="$HOME/.dotfiles/scripts:$PATH"
-export PATH="/Applications/Alacritty.app/Contents/MacOS:$PATH"
-export LOCAL="$HOME/.local"
-export PATH="$LOCAL/bin:$PATH"
-
-# Set repository path for easy access
-export SOURCE_REPO_PATH="/Users/chris.phillips/environment/dim/draw/integration-pipelines"
+# Keep user scripts first while allowing macOS, Linux, and WSL package paths.
+typeset -U path PATH
+for dotfiles_path in \
+  "$HOME/bin" \
+  "$HOME/.local/bin" \
+  "/opt/homebrew/bin" \
+  "/usr/local/bin" \
+  "/home/linuxbrew/.linuxbrew/bin"; do
+  [[ -d "$dotfiles_path" ]] && path=("$dotfiles_path" $path)
+done
+unset dotfiles_path
 
 # Language environment variable to prevent locale-related warnings
 export LANG=en_US.UTF-8
@@ -29,8 +30,17 @@ export LANG=en_US.UTF-8
 # Set default editor to Neovim
 export EDITOR=nvim
 
+# Keep Navi config in a stable, dotfiles-managed location.
+export NAVI_CONFIG="$HOME/.config/navi/config.yaml"
+
+# Automatically load trusted per-project environment files, and unload them
+# when leaving the project directory.
+if command -v direnv >/dev/null 2>&1; then
+  eval "$(direnv hook zsh)"
+fi
+
 # -------------------------------
-# Zsh Aliases
+# Zsh Aliases (Fast Loading)
 # -------------------------------
 # Load custom aliases from .dotfiles
 if [ -f ~/.dotfiles/.aliases ]; then
@@ -46,102 +56,34 @@ bindkey '^R' history-incremental-search-backward
 bindkey '^P' up-history
 
 # -------------------------------
-# Functions
-# -------------------------------
-# Create and navigate to a new directory
-mkcd() {
-    mkdir -p "${1}"
-    cd "${1}"
-}
-
-# -------------------------------
 # Theme and Prompt Customization
 # -------------------------------
-# Set theme to Powerlevel10k and load theme
-# source ~/powerlevel10k/powerlevel10k.zsh-theme
-# ZSH_THEME="powerlevel10k/powerlevel10k"
+# Set theme to Powerlevel10k when it is installed.
+if [ -f ~/powerlevel10k/powerlevel10k.zsh-theme ]; then
+  source ~/powerlevel10k/powerlevel10k.zsh-theme
+fi
 
 # Load Powerlevel10k configuration
-# [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # -------------------------------
-# Plugin Initializations
+# History Configuration
 # -------------------------------
-# NVM (Node Version Manager) setup
-export NVM_DIR="$HOME/.nvm"
-[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
-[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+# History file setup
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
 
-# Pyenv setup for managing Python versions
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+# Only skip saving identical commands run back-to-back
+setopt HIST_IGNORE_DUPS
 
-# ASDF version manager
-# . /opt/homebrew/opt/asdf/libexec/asdf.sh
+# Helpful additional settings (but not full deduping)
+setopt INC_APPEND_HISTORY      # Immediately write to file
+setopt SHARE_HISTORY           # Share across sessions
+setopt HIST_REDUCE_BLANKS      # Trim extra spaces
 
-# Conda initialization
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/chris.phillips/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/chris.phillips/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/Users/chris.phillips/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/Users/chris.phillips/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
+# Capture the previous command's tmux output for the `vlogs` helper.
+[ -f "$HOME/.dotfiles/scripts/vlogs-hook.zsh" ] && source "$HOME/.dotfiles/scripts/vlogs-hook.zsh"
 
-# Direnv initialization for environment-specific configurations
-# eval "$(direnv hook zsh)"
-
-# Custom function path
-fpath+=${ZDOTDIR:-~}/.zsh_functions
-
-# Script to take over environment for ngp
-takeover () {
-	target_env=$1
-	service_name=$2
-	target_role=$3
-	echo "Please select the development role where we will build:"
-	. assume "Built-Dev/BuiltDeveloper"
-	export AWS_PAGER=""
-	source_version=$(git rev-parse HEAD)
-	build_id=$(aws codebuild start-build \
-      --project-name $service_name-build \
-      --source-version "$source_version" \
-      --output json | jq -r '.build.id'
-      )
-	echo "Started build $build_id"
-	wait_for_build_completion () {
-		local build_id=$1
-		while true
-		do
-			build_status=$(aws codebuild batch-get-builds --ids "$build_id" | jq -r '.builds[0].buildStatus')
-			if [ "$build_status" = "SUCCEEDED" ]
-			then
-				echo "Build succeeded"
-				break
-			elif [ "$build_status" = "FAILED" ]
-			then
-				echo "Build failed"
-				return 1
-			fi
-			echo "Build status: $build_status - waiting for completion..."
-			sleep 10
-		done
-	}
-	wait_for_build_completion "$build_id"
-	echo "Please select the role where we will deploy:"
-	. assume "$target_role"
-	build_id=$(aws codebuild start-build \
-      --project-name "$target_env-$service_name" \
-      --source-version "$source_version" \
-      --output json | jq -r '.build.id'
-      )
-	echo "Started build for $service_name in $target_env: $build_id"
-	wait_for_build_completion "$build_id"
-}
+# Keep machine-local exports and secrets out of git.
+[ -f "$HOME/.dotfiles/.local.zsh" ] && source "$HOME/.dotfiles/.local.zsh"

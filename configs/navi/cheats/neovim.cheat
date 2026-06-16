@@ -1,0 +1,85 @@
+% neovim, vim, editing, motions
+
+# Wrap word in double quotes
+ciw""<Esc>P
+
+# Wrap word in single quotes
+ciw''<Esc>P
+
+# Wrap word in backticks
+ciw``<Esc>P
+
+# Wrap word in parentheses
+ciw()<Esc>P
+
+# Wrap word in square brackets
+ciw[]<Esc>P
+
+# Wrap word in curly braces
+ciw{}<Esc>P
+
+# Change inside double quotes
+ci"
+
+# Change inside single quotes
+ci'
+
+# Change inside backticks
+ci`
+
+# Change inside parentheses
+ci(
+
+# Change inside square brackets
+ci[
+
+# Change inside curly braces
+ci{
+
+# Change inside HTML or XML tag
+cit
+
+# Yank inside double quotes
+yi"
+
+# Delete inside double quotes
+di"
+
+# Select around double quotes
+va"
+
+# Select inside double quotes
+vi"
+
+# Duplicate current line below
+yyp
+
+# Duplicate current line above
+yyP
+
+# Search word under cursor, change it, then repeat on next match with n.
+* ciw<replacement><Esc> n.
+
+# Reindent current paragraph
+=ap
+
+# Format current paragraph
+gqip
+
+# Reindent whole file
+gg=G
+
+# Delete without yanking
+"_d
+
+# Delete character without yanking
+"_x
+
+# Yank to system clipboard
+"+y
+
+# Paste from system clipboard
+"+p
+
+# Replace word under cursor across the current file
+:%s/\<<C-r><C-w>\>/<replacement>/g

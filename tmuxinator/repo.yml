@@ -1,0 +1,23 @@
+# Generic repo workspace.
+# Start from any repo with:
+#   tmux-repo
+#   tmux-repo ~/code/my-repo
+
+name: <%= ENV.fetch("PROJECT_NAME", File.basename(ENV.fetch("PROJECT_DIR", Dir.pwd))) %>
+root: <%= ENV.fetch("PROJECT_DIR", Dir.pwd) %>
+
+windows:
+  - zsh:
+      panes:
+        -
+  - llm:
+      panes:
+        - llm chat --system "Respond with brief answers unless explicitly told otherwise"
+  - git:
+      panes:
+        - tmux-lazygit
+  - <%= ENV.fetch("PROJECT_NAME", File.basename(ENV.fetch("PROJECT_DIR", Dir.pwd))) %>:
+      layout: main-vertical
+      panes:
+        - nvim .
+        -

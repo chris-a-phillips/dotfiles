@@ -2,12 +2,8 @@
 	defaultBranch = main
 
 [core]
-	editor = code --wait
+	editor = nvim
 	pager = delta
-
-[user]
-	email = phillipsachris@gmail.com
-	name = Chris Phillips
 
 [interactive]
 	diffFilter = delta --color-only
@@ -43,3 +39,7 @@
 
 [safe]
 	directory = /workspaces
+
+[include]
+	path = ~/.gitconfig.platform
+	path = ~/.gitconfig.local

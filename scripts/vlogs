@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+BASE_DIR="${VLOGS_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/vlogs}"
+tmux_format='#{session_name}	#{window_name}	#{pane_id}'
+
+sanitize_path_part() {
+  printf '%s' "$1" |
+    tr '/[:space:]' '---' |
+    sed 's/[^A-Za-z0-9._%+-]/-/g; s/-\{2,\}/-/g; s/^-//; s/-$//'
+}
+
+die() {
+  printf 'vlogs: %s\n' "$*" >&2
+  exit 1
+}
+
+if [[ -z "${TMUX:-}" ]]; then
+  die "must be run inside tmux"
+fi
+
+if ! command -v tmux >/dev/null 2>&1; then
+  die "tmux is not on PATH"
+fi
+
+state="$(tmux display-message -p "$tmux_format")" || die "could not read tmux state"
+IFS=$'\t' read -r session window pane <<<"$state"
+
+session_safe="$(sanitize_path_part "$session")"
+window_safe="$(sanitize_path_part "$window")"
+pane_safe="$(sanitize_path_part "$pane")"
+log_file="$BASE_DIR/current/$session_safe/$window_safe/$pane_safe.log"
+
+[[ -f "$log_file" ]] || die "no captured command output for this pane yet"
+
+editor="${EDITOR:-nvim}"
+if ! command -v "$editor" >/dev/null 2>&1; then
+  editor="nvim"
+fi
+
+exec "$editor" "$log_file"
