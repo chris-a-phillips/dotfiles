@@ -18,6 +18,3 @@ windows:
       panes:
         - cd ~/code/
         - cd ~/code/
-  - x-in-y:
-      panes:
-        - cd ~/code/x-in-y; nvim .

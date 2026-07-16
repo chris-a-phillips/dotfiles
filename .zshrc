@@ -25,7 +25,7 @@ done
 unset dotfiles_path
 
 # Language environment variable to prevent locale-related warnings
-export LANG=en_US.UTF-8
+export LANG=C.UTF-8
 
 # Set default editor to Neovim
 export EDITOR=nvim
@@ -59,8 +59,8 @@ bindkey '^P' up-history
 # Theme and Prompt Customization
 # -------------------------------
 # Set theme to Powerlevel10k when it is installed.
-if [ -f ~/powerlevel10k/powerlevel10k.zsh-theme ]; then
-  source ~/powerlevel10k/powerlevel10k.zsh-theme
+if [ -f "$HOME/.local/share/powerlevel10k/powerlevel10k.zsh-theme" ]; then
+  source "$HOME/.local/share/powerlevel10k/powerlevel10k.zsh-theme"
 fi
 
 # Load Powerlevel10k configuration
@@ -87,3 +87,7 @@ setopt HIST_REDUCE_BLANKS      # Trim extra spaces
 
 # Keep machine-local exports and secrets out of git.
 [ -f "$HOME/.dotfiles/.local.zsh" ] && source "$HOME/.dotfiles/.local.zsh"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
