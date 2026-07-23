@@ -87,7 +87,8 @@ needs Windows policy/admin support. Prefer WSL `~/code` for this setup first.
 - Installs Homebrew on macOS if needed.
 - Runs `brew bundle --file Brewfile` on macOS.
 - Installs apt-based core development packages on Ubuntu/Debian/WSL when possible.
-- Resolves the latest Neovim, tmux, LazyGit, Navi, and Tree-sitter CLI releases on Linux and falls back to known-good versions when needed.
+- Resolves current Neovim, LazyGit, Navi, and Tree-sitter CLI releases on Linux and falls back to known-good versions when needed.
+- Installs tmux into a versioned directory and defaults to tmux 3.6b.
 - Installs or updates NVM and installs the latest Node.js LTS release on Linux.
 - Clones the separate Neovim configuration repository into `~/.config/nvim`.
 - Bootstraps current Neovim plugins and Mason-managed developer tools during a full install.
@@ -113,8 +114,13 @@ configuration and clones the Neovim repository.
 
 ## Release Selection
 
-On Linux, the installer asks each upstream GitHub project for its latest release.
-If that lookup or download fails, it retries with a known-good release.
+On Linux, the installer asks each upstream GitHub project for its latest release,
+except tmux. tmux defaults to 3.6b because 3.7b causes cursor-rendering glitches
+with Neovim in the tested Windows Terminal and WSL setup. tmux is installed under
+`~/.local/opt/tmux-<version>` and linked from `~/.local/bin/tmux`.
+
+If a latest-version lookup or download fails, the installer retries with a
+known-good release.
 
 Known-good fallbacks are Neovim v0.12.3, tmux 3.6b, LazyGit v0.62.2,
 Navi v2.24.0, Tree-sitter CLI v0.25.10, and NVM v0.40.3.

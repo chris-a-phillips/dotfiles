@@ -8,6 +8,7 @@ RUN_BREW=1
 RUN_PACKAGES=1
 DRY_RUN=0
 NEOVIM_FALLBACK_VERSION="${DOTFILES_NEOVIM_FALLBACK_VERSION:-v0.12.3}"
+TMUX_VERSION="${DOTFILES_TMUX_VERSION:-3.6b}"
 TMUX_FALLBACK_VERSION="${DOTFILES_TMUX_FALLBACK_VERSION:-3.6b}"
 LAZYGIT_FALLBACK_VERSION="${DOTFILES_LAZYGIT_FALLBACK_VERSION:-v0.62.2}"
 NAVI_FALLBACK_VERSION="${DOTFILES_NAVI_FALLBACK_VERSION:-v2.24.0}"
@@ -362,17 +363,20 @@ install_linux_tmux_current() {
   [[ "$RUN_PACKAGES" -eq 1 ]] || return 0
   is_linux || return 0
 
-  local version archive fallback_archive tmp_dir
-  version="$(resolve_github_version "${DOTFILES_TMUX_VERSION:-}" tmux/tmux "$TMUX_FALLBACK_VERSION" tmux)"
+  local version archive fallback_archive tmp_dir install_root install_dir
+  version="$(resolve_github_version "$TMUX_VERSION" tmux/tmux "$TMUX_FALLBACK_VERSION" tmux)"
   archive="tmux-${version}.tar.gz"
   fallback_archive="tmux-${TMUX_FALLBACK_VERSION}.tar.gz"
+  install_root="$HOME/.local/opt"
+  install_dir="$install_root/tmux-${version}"
 
-  if command_exists tmux && tmux -V | grep -q "tmux ${version}"; then
+  if [[ -x "$install_dir/bin/tmux" ]] && "$install_dir/bin/tmux" -V | grep -q "tmux ${version}"; then
     log "tmux ${version} already installed"
+    link_file "$install_dir/bin/tmux" "$HOME/.local/bin/tmux"
     return 0
   fi
 
-  log "Installing tmux ${version} into ~/.local"
+  log "Installing tmux ${version} into $install_dir"
   if [[ "$DRY_RUN" -eq 1 ]]; then
     download_github_release_asset tmux/tmux "$version" "$archive" "$TMUX_FALLBACK_VERSION" "$fallback_archive" /tmp/tmux.tar.gz tmux
     return 0
@@ -382,13 +386,16 @@ install_linux_tmux_current() {
   trap 'rm -rf "$tmp_dir"' RETURN
   download_github_release_asset tmux/tmux "$version" "$archive" "$TMUX_FALLBACK_VERSION" "$fallback_archive" "$tmp_dir/$archive" tmux
   version="$DOWNLOADED_VERSION"
+  install_dir="$install_root/tmux-${version}"
   run tar -xzf "$tmp_dir/$archive" -C "$tmp_dir"
+  run mkdir -p "$install_root"
   (
     cd "$tmp_dir/tmux-${version}"
-    run ./configure --prefix="$HOME/.local"
+    run ./configure --prefix="$install_dir"
     run make -j"$(nproc)"
     run make install
   )
+  link_file "$install_dir/bin/tmux" "$HOME/.local/bin/tmux"
 }
 
 install_linux_lazygit_current() {
