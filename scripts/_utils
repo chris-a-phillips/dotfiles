@@ -11,20 +11,46 @@ _GIT_CACHE_TIMEOUT=5
 
 _file_mtime() {
     local file="$1"
-    stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo 0
+    local mtime
+
+    case "$(uname -s)" in
+        Darwin|FreeBSD)
+            mtime=$(stat -f '%m' "$file" 2>/dev/null)
+            ;;
+        *)
+            mtime=$(stat -c '%Y' "$file" 2>/dev/null)
+            ;;
+    esac
+
+    case "$mtime" in
+        ''|*[!0-9]*) echo 0 ;;
+        *) echo "$mtime" ;;
+    esac
 }
 
 # Check if cache is valid
 _is_cache_valid() {
     local cache_file="$1"
     local timeout="$2"
-    [ -f "$cache_file" ] && [ $(($(date +%s) - $(_file_mtime "$cache_file"))) -lt "$timeout" ]
+    local now
+    local mtime
+
+    [ -f "$cache_file" ] || return 1
+    now=$(date +%s)
+    mtime=$(_file_mtime "$cache_file")
+    [ $((now - mtime)) -lt "$timeout" ]
+}
+
+_git_cache_scope() {
+    local scope
+    scope=$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)
+    printf '%s' "$scope" | cksum | awk '{print $1}'
 }
 
 # Cache git operations
 _cache_git_operation() {
     local operation="$1"
-    local cache_file="$_GIT_CACHE_FILE.$operation"
+    local cache_file="$_GIT_CACHE_FILE.$(_git_cache_scope).$operation"
     
     if _is_cache_valid "$cache_file" "$_GIT_CACHE_TIMEOUT"; then
         cat "$cache_file"
