@@ -4,26 +4,30 @@ set -euo pipefail
 
 DOTFILES_REPOSITORY="${DOTFILES_REPOSITORY:-https://github.com/chris-a-phillips/dotfiles.git}"
 DOTFILES_TARGET_PATH="${DOTFILES_TARGET_PATH:-~/.dotfiles}"
-DEVCONTAINER_REMOTE_HOME="${DEVCONTAINER_REMOTE_HOME:-/home/vscode}"
-NVIM_CONFIG_SOURCE="${NVIM_CONFIG_SOURCE:-$HOME/.config/nvim}"
 
 usage() {
   cat <<'EOF'
 Usage: devcontainer-shell [workspace] [command...]
 
-Create or reuse a project's development container with personal dotfiles, then
-open a login zsh shell. Pass a command after the workspace to run it instead.
+Create or reuse exactly one project devcontainer. Without a command, open a
+login zsh shell for runtime work. Keep tmux and Neovim on the UbuntuDev host.
 
 Examples:
-  devcontainer-shell
   devcontainer-shell ~/ware-malcomb/navigator-frontend
-  devcontainer-shell ~/ware-malcomb/navigator-frontend nvim .
+  devcontainer-shell ~/ware-malcomb/navigator-frontend make doctor
+  devcontainer-shell ~/ware-malcomb/navigator-frontend make up
 EOF
 }
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   usage
   exit 0
+fi
+
+if [[ -f /.dockerenv ]]; then
+  printf 'error: devcontainer-shell was invoked from inside a container.\n' >&2
+  printf 'You are already in the development container; run the command directly.\n' >&2
+  exit 2
 fi
 
 if ! command -v devcontainer >/dev/null 2>&1; then
@@ -42,39 +46,64 @@ command -v devcontainer >/dev/null 2>&1 || {
   exit 1
 }
 
+command -v docker >/dev/null 2>&1 || {
+  printf 'error: Docker CLI is not available on PATH.\n' >&2
+  exit 1
+}
+
 workspace="${1:-$PWD}"
 if [[ "$#" -gt 0 ]]; then
   shift
 fi
 workspace="$(cd "$workspace" && pwd)"
+config_file="$workspace/.devcontainer/devcontainer.json"
 
-[[ -f "$workspace/.devcontainer/devcontainer.json" ]] || {
+[[ -f "$config_file" ]] || {
   printf 'error: no .devcontainer/devcontainer.json found in %s\n' "$workspace" >&2
   exit 1
 }
 
-up_arguments=(
-  --workspace-folder "$workspace"
-  --dotfiles-repository "$DOTFILES_REPOSITORY"
-  --dotfiles-install-command install-container.sh
-  --dotfiles-target-path "$DOTFILES_TARGET_PATH"
-)
+find_project_containers() {
+  docker ps \
+    --filter "label=devcontainer.config_file=$config_file" \
+    --format '{{.ID}}'
+}
 
-# Reuse a local private Neovim configuration without copying credentials into
-# the container. Engineers without this directory keep the shared defaults.
-if [[ -f "$NVIM_CONFIG_SOURCE/init.lua" ]]; then
-  up_arguments+=(
-    --mount
-    "type=bind,source=$NVIM_CONFIG_SOURCE,target=$DEVCONTAINER_REMOTE_HOME/.config/nvim"
-  )
+mapfile -t container_ids < <(find_project_containers)
+
+if (( ${#container_ids[@]} > 1 )); then
+  printf 'error: multiple running devcontainers use %s:\n' "$config_file" >&2
+  printf '  %s\n' "${container_ids[@]}" >&2
+  printf 'Stop the duplicate containers before continuing.\n' >&2
+  exit 3
 fi
 
-devcontainer up "${up_arguments[@]}"
+if (( ${#container_ids[@]} == 0 )); then
+  devcontainer up \
+    --workspace-folder "$workspace" \
+    --dotfiles-repository "$DOTFILES_REPOSITORY" \
+    --dotfiles-install-command install-container.sh \
+    --dotfiles-target-path "$DOTFILES_TARGET_PATH"
+
+  mapfile -t container_ids < <(find_project_containers)
+fi
+
+if (( ${#container_ids[@]} != 1 )); then
+  printf 'error: expected one running devcontainer for %s, found %d.\n' \
+    "$workspace" "${#container_ids[@]}" >&2
+  exit 4
+fi
+
+container_id="${container_ids[0]}"
 
 if [[ "$#" -eq 0 ]]; then
+  printf '\nEntering WMDx devcontainer %s.\n' "$container_id"
+  printf 'Source files are bind-mounted from UbuntuDev. Type exit to return.\n'
+  printf 'Keep tmux and Neovim on UbuntuDev for your full personal workflow.\n\n'
   set -- zsh -l
 fi
 
 exec devcontainer exec \
+  --container-id "$container_id" \
   --workspace-folder "$workspace" \
   "$@"

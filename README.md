@@ -238,28 +238,32 @@ VS Code User Settings:
 }
 ```
 
-From a terminal, create or reuse a container and open a login shell:
+Keep tmux and Neovim on the UbuntuDev host so personal mappings, clipboard
+integration, plugins, language servers, and credentials keep their normal
+behavior. Opening a WMDx application in host Neovim creates or reuses its
+devcontainer automatically.
+
+Use an explicit container shell only for runtime work:
 
 ```bash
 devcontainer-shell ~/ware-malcomb/navigator-frontend
 ```
 
-Run Neovim directly inside the same environment:
+Or execute one command in the container:
 
 ```bash
-devcontainer-shell ~/ware-malcomb/navigator-frontend nvim .
+devcontainer-shell ~/ware-malcomb/navigator-frontend make doctor
 ```
 
-When `~/.config/nvim/init.lua` exists on the host, `devcontainer-shell` mounts
-that configuration at `/home/vscode/.config/nvim` in the container. This keeps
-the host and container configuration synchronized without requiring the
-container to authenticate to a private Git repository. Engineers without a
-local Neovim configuration continue to use the shared container unchanged.
+The helper identifies an existing project container by its
+`devcontainer.config_file` label, so a container created by VS Code can be
+reused from the terminal. It refuses to choose when duplicate project
+containers exist.
 
 The container installer does not replace the shared Python, Node, Docker, or
 `wmbox` versions. Optional personal-tool failures leave the shared development
-environment usable. Private child repositories, such as the Neovim config,
-install when Git credentials are available and otherwise emit a warning.
+environment usable. Private child repositories install when Git credentials are
+available and otherwise emit a warning.
 
 ## Security Notes
 
