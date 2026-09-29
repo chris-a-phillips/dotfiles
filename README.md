@@ -250,6 +250,12 @@ Run Neovim directly inside the same environment:
 devcontainer-shell ~/ware-malcomb/navigator-frontend nvim .
 ```
 
+When `~/.config/nvim/init.lua` exists on the host, `devcontainer-shell` mounts
+that configuration at `/home/vscode/.config/nvim` in the container. This keeps
+the host and container configuration synchronized without requiring the
+container to authenticate to a private Git repository. Engineers without a
+local Neovim configuration continue to use the shared container unchanged.
+
 The container installer does not replace the shared Python, Node, Docker, or
 `wmbox` versions. Optional personal-tool failures leave the shared development
 environment usable. Private child repositories, such as the Neovim config,

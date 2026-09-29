@@ -4,6 +4,8 @@ set -euo pipefail
 
 DOTFILES_REPOSITORY="${DOTFILES_REPOSITORY:-https://github.com/chris-a-phillips/dotfiles.git}"
 DOTFILES_TARGET_PATH="${DOTFILES_TARGET_PATH:-~/.dotfiles}"
+DEVCONTAINER_REMOTE_HOME="${DEVCONTAINER_REMOTE_HOME:-/home/vscode}"
+NVIM_CONFIG_SOURCE="${NVIM_CONFIG_SOURCE:-$HOME/.config/nvim}"
 
 usage() {
   cat <<'EOF'
@@ -24,6 +26,17 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   exit 0
 fi
 
+if ! command -v devcontainer >/dev/null 2>&1; then
+  devcontainer_path="$(
+    find "$HOME/.nvm/versions/node" -path '*/bin/devcontainer' -print 2>/dev/null \
+      | sort -V \
+      | tail -n 1
+  )"
+  if [[ -n "$devcontainer_path" ]]; then
+    export PATH="$(dirname "$devcontainer_path"):$PATH"
+  fi
+fi
+
 command -v devcontainer >/dev/null 2>&1 || {
   printf 'error: devcontainer CLI is not available on PATH.\n' >&2
   exit 1
@@ -40,11 +53,23 @@ workspace="$(cd "$workspace" && pwd)"
   exit 1
 }
 
-devcontainer up \
-  --workspace-folder "$workspace" \
-  --dotfiles-repository "$DOTFILES_REPOSITORY" \
-  --dotfiles-install-command install-container.sh \
+up_arguments=(
+  --workspace-folder "$workspace"
+  --dotfiles-repository "$DOTFILES_REPOSITORY"
+  --dotfiles-install-command install-container.sh
   --dotfiles-target-path "$DOTFILES_TARGET_PATH"
+)
+
+# Reuse a local private Neovim configuration without copying credentials into
+# the container. Engineers without this directory keep the shared defaults.
+if [[ -f "$NVIM_CONFIG_SOURCE/init.lua" ]]; then
+  up_arguments+=(
+    --mount
+    "type=bind,source=$NVIM_CONFIG_SOURCE,target=$DEVCONTAINER_REMOTE_HOME/.config/nvim"
+  )
+fi
+
+devcontainer up "${up_arguments[@]}"
 
 if [[ "$#" -eq 0 ]]; then
   set -- zsh -l
