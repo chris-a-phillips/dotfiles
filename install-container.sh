@@ -18,6 +18,9 @@ DOTFILES_TREE_SITTER_VERSION="${DOTFILES_TREE_SITTER_VERSION:-v0.25.10}"
 # shellcheck source=install.sh
 source "$CONTAINER_DOTFILES_DIR/install.sh"
 
+# Personal user-local tools must be visible during non-interactive setup too.
+export PATH="$HOME/.local/bin:$PATH"
+
 RUN_BREW=0
 RUN_PACKAGES=0
 DELTA_FALLBACK_VERSION="${DOTFILES_DELTA_FALLBACK_VERSION:-0.19.2}"
@@ -164,6 +167,15 @@ install_container_user_tool() {
   return "$status"
 }
 
+bootstrap_container_neovim() {
+  if [[ ! -f "$HOME/.config/nvim/init.lua" ]]; then
+    warn "Neovim configuration is unavailable; skipping plugin bootstrap."
+    return 0
+  fi
+
+  install_container_user_tool bootstrap_neovim
+}
+
 install_container_configuration() {
   log "Linking personal container configuration"
 
@@ -174,6 +186,7 @@ install_container_configuration() {
   run_optional_step "Dotfile linking" install_dotfiles
   run_optional_step "Platform configuration" install_platform_files
   run_optional_step "Neovim configuration" install_neovim_config
+  run_optional_step "Neovim plugin bootstrap" bootstrap_container_neovim
   run_optional_step "Personal script linking" install_scripts
   run_optional_step "Shell extras" install_shell_extras
   run_optional_step "Local file creation" ensure_local_files
