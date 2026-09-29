@@ -222,6 +222,39 @@ In tmux, press `prefix + I` to install plugins. Tmux Continuum autosaves the
 tmux environment every 15 minutes and restores the last save when a new tmux
 server starts.
 
+## Development Containers
+
+The shared project devcontainer works without these dotfiles. Personal setup is
+opt-in and runs only when VS Code User Settings or the Dev Container CLI names
+this repository.
+
+VS Code User Settings:
+
+```json
+{
+  "dotfiles.repository": "chris-a-phillips/dotfiles",
+  "dotfiles.targetPath": "~/.dotfiles",
+  "dotfiles.installCommand": "install-container.sh"
+}
+```
+
+From a terminal, create or reuse a container and open a login shell:
+
+```bash
+devcontainer-shell ~/ware-malcomb/navigator-frontend
+```
+
+Run Neovim directly inside the same environment:
+
+```bash
+devcontainer-shell ~/ware-malcomb/navigator-frontend nvim .
+```
+
+The container installer does not replace the shared Python, Node, Docker, or
+`wmbox` versions. Optional personal-tool failures leave the shared development
+environment usable. Private child repositories, such as the Neovim config,
+install when Git credentials are available and otherwise emit a warning.
+
 ## Security Notes
 
 Do not commit API keys, app licenses, SSH keys, or work credentials. If one ever lands in git history, rotate it even after removing it from the current files.

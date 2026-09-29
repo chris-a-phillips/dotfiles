@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DOTFILES_REPOSITORY="${DOTFILES_REPOSITORY:-https://github.com/chris-a-phillips/dotfiles.git}"
+DOTFILES_TARGET_PATH="${DOTFILES_TARGET_PATH:-~/.dotfiles}"
+
+usage() {
+  cat <<'EOF'
+Usage: devcontainer-shell [workspace] [command...]
+
+Create or reuse a project's development container with personal dotfiles, then
+open a login zsh shell. Pass a command after the workspace to run it instead.
+
+Examples:
+  devcontainer-shell
+  devcontainer-shell ~/ware-malcomb/navigator-frontend
+  devcontainer-shell ~/ware-malcomb/navigator-frontend nvim .
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+command -v devcontainer >/dev/null 2>&1 || {
+  printf 'error: devcontainer CLI is not available on PATH.\n' >&2
+  exit 1
+}
+
+workspace="${1:-$PWD}"
+if [[ "$#" -gt 0 ]]; then
+  shift
+fi
+workspace="$(cd "$workspace" && pwd)"
+
+[[ -f "$workspace/.devcontainer/devcontainer.json" ]] || {
+  printf 'error: no .devcontainer/devcontainer.json found in %s\n' "$workspace" >&2
+  exit 1
+}
+
+devcontainer up \
+  --workspace-folder "$workspace" \
+  --dotfiles-repository "$DOTFILES_REPOSITORY" \
+  --dotfiles-install-command install-container.sh \
+  --dotfiles-target-path "$DOTFILES_TARGET_PATH"
+
+if [[ "$#" -eq 0 ]]; then
+  set -- zsh -l
+fi
+
+exec devcontainer exec \
+  --workspace-folder "$workspace" \
+  "$@"
